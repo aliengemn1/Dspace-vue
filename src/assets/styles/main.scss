@@ -1,0 +1,528 @@
+// ===================================
+// Main Stylesheet - الملف الرئيسي للأنماط
+// KFNL Digital Repository
+// ===================================
+
+// -----------------------------------
+// استيراد الملفات الأساسية
+// -----------------------------------
+
+@use 'sass:color';
+
+// المتغيرات والـ Mixins (يتم استيرادها تلقائياً عبر Vite)
+// Variables and mixins are injected globally via vite.config.js
+
+// الملفات الإضافية - Load into global scope
+@use 'typography' as *;
+@use 'rtl' as *;
+@use 'components' as *;
+
+// -----------------------------------
+// إعادة التعيين - Reset & Normalize
+// -----------------------------------
+
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html {
+  font-size: 16px;
+  scroll-behavior: smooth;
+  -webkit-text-size-adjust: 100%;
+  -webkit-tap-highlight-color: transparent;
+}
+
+body {
+  font-family: $font-family-primary;
+  font-size: $font-size-base;
+  font-weight: $font-weight-regular;
+  line-height: $line-height-normal;
+  color: $text-primary;
+  background-color: $bg-primary;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  overflow-x: hidden;
+}
+
+// -----------------------------------
+// الصور والوسائط
+// -----------------------------------
+
+img, picture, video, canvas, svg {
+  display: block;
+  max-width: 100%;
+  height: auto;
+}
+
+img {
+  border-style: none;
+}
+
+// -----------------------------------
+// النماذج - Forms Reset
+// -----------------------------------
+
+button, input, optgroup, select, textarea {
+  font-family: inherit;
+  font-size: 100%;
+  line-height: 1.15;
+  margin: 0;
+}
+
+button, input {
+  overflow: visible;
+}
+
+button, select {
+  text-transform: none;
+}
+
+button,
+[type="button"],
+[type="reset"],
+[type="submit"] {
+  -webkit-appearance: button;
+}
+
+fieldset {
+  padding: 0;
+  margin: 0;
+  border: 0;
+}
+
+legend {
+  display: table;
+  max-width: 100%;
+  padding: 0;
+  white-space: normal;
+}
+
+textarea {
+  overflow: auto;
+  resize: vertical;
+}
+
+[type="checkbox"],
+[type="radio"] {
+  padding: 0;
+}
+
+[type="number"]::-webkit-inner-spin-button,
+[type="number"]::-webkit-outer-spin-button {
+  height: auto;
+}
+
+[type="search"] {
+  -webkit-appearance: textfield;
+  outline-offset: -2px;
+}
+
+[type="search"]::-webkit-search-decoration {
+  -webkit-appearance: none;
+}
+
+::-webkit-file-upload-button {
+  -webkit-appearance: button;
+  font: inherit;
+}
+
+// -----------------------------------
+// الجداول - Tables Reset
+// -----------------------------------
+
+table {
+  border-collapse: collapse;
+  border-spacing: 0;
+  width: 100%;
+}
+
+// -----------------------------------
+// التفاعل - Interactive Elements
+// -----------------------------------
+
+a {
+  background-color: transparent;
+}
+
+a:not([class]) {
+  text-decoration-skip-ink: auto;
+}
+
+abbr[title] {
+  border-bottom: none;
+  text-decoration: underline dotted;
+}
+
+b, strong {
+  font-weight: $font-weight-bold;
+}
+
+small {
+  font-size: 80%;
+}
+
+sub, sup {
+  font-size: 75%;
+  line-height: 0;
+  position: relative;
+  vertical-align: baseline;
+}
+
+sub {
+  bottom: -0.25em;
+}
+
+sup {
+  top: -0.5em;
+}
+
+// -----------------------------------
+// إمكانية الوصول - Accessibility
+// -----------------------------------
+
+// إخفاء بصري مع الحفاظ على إمكانية الوصول
+.sr-only,
+.visually-hidden {
+  @include visually-hidden;
+}
+
+// التركيز المرئي
+:focus {
+  outline: none;
+}
+
+:focus-visible {
+  outline: 2px solid $primary-color;
+  outline-offset: 2px;
+}
+
+// تجاهل حركة الانتقال للمستخدمين الذين يفضلون ذلك
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+// -----------------------------------
+// الحاوية - Container
+// -----------------------------------
+
+.container {
+  @include container;
+}
+
+.container-fluid {
+  width: 100%;
+  padding-inline: $container-padding;
+}
+
+.container-narrow {
+  @include container(960px);
+}
+
+// -----------------------------------
+// الشبكة - Grid System
+// -----------------------------------
+
+.row {
+  display: flex;
+  flex-wrap: wrap;
+  margin-inline: -$spacing-3;
+}
+
+.col {
+  flex: 1;
+  padding-inline: $spacing-3;
+}
+
+// أعمدة ديناميكية
+@for $i from 1 through 12 {
+  .col-#{$i} {
+    flex: 0 0 calc(100% * #{$i} / 12);
+    max-width: calc(100% * #{$i} / 12);
+    padding-inline: $spacing-3;
+  }
+}
+
+// الأعمدة المتجاوبة
+@each $breakpoint, $value in $breakpoints {
+  @if $breakpoint != 'xs' {
+    @include media-up($breakpoint) {
+      @for $i from 1 through 12 {
+        .col-#{$breakpoint}-#{$i} {
+          flex: 0 0 calc(100% * #{$i} / 12);
+          max-width: calc(100% * #{$i} / 12);
+        }
+      }
+    }
+  }
+}
+
+// -----------------------------------
+// فئات المساعدة - Utility Classes
+// -----------------------------------
+
+// العرض
+.d-none { display: none !important; }
+.d-block { display: block !important; }
+.d-inline { display: inline !important; }
+.d-inline-block { display: inline-block !important; }
+.d-flex { display: flex !important; }
+.d-inline-flex { display: inline-flex !important; }
+.d-grid { display: grid !important; }
+
+// Flexbox
+.flex-row { flex-direction: row !important; }
+.flex-column { flex-direction: column !important; }
+.flex-wrap { flex-wrap: wrap !important; }
+.flex-nowrap { flex-wrap: nowrap !important; }
+.flex-grow-0 { flex-grow: 0 !important; }
+.flex-grow-1 { flex-grow: 1 !important; }
+.flex-shrink-0 { flex-shrink: 0 !important; }
+.flex-shrink-1 { flex-shrink: 1 !important; }
+
+.justify-start { justify-content: flex-start !important; }
+.justify-center { justify-content: center !important; }
+.justify-end { justify-content: flex-end !important; }
+.justify-between { justify-content: space-between !important; }
+.justify-around { justify-content: space-around !important; }
+
+.items-start { align-items: flex-start !important; }
+.items-center { align-items: center !important; }
+.items-end { align-items: flex-end !important; }
+.items-stretch { align-items: stretch !important; }
+
+.self-start { align-self: flex-start !important; }
+.self-center { align-self: center !important; }
+.self-end { align-self: flex-end !important; }
+
+// Gap
+.gap-0 { gap: 0 !important; }
+.gap-1 { gap: $spacing-1 !important; }
+.gap-2 { gap: $spacing-2 !important; }
+.gap-3 { gap: $spacing-3 !important; }
+.gap-4 { gap: $spacing-4 !important; }
+.gap-5 { gap: $spacing-5 !important; }
+.gap-6 { gap: $spacing-6 !important; }
+.gap-8 { gap: $spacing-8 !important; }
+
+// Margin & Padding
+@each $name, $value in $spacing-values {
+  .m-#{$name} { margin: $value !important; }
+  .mt-#{$name} { margin-top: $value !important; }
+  .mb-#{$name} { margin-bottom: $value !important; }
+  .my-#{$name} { margin-block: $value !important; }
+
+  .p-#{$name} { padding: $value !important; }
+  .pt-#{$name} { padding-top: $value !important; }
+  .pb-#{$name} { padding-bottom: $value !important; }
+  .py-#{$name} { padding-block: $value !important; }
+}
+
+.m-auto { margin: auto !important; }
+.mt-auto { margin-top: auto !important; }
+.mb-auto { margin-bottom: auto !important; }
+.my-auto { margin-block: auto !important; }
+
+// العرض والارتفاع
+.w-full { width: 100% !important; }
+.w-auto { width: auto !important; }
+.h-full { height: 100% !important; }
+.h-auto { height: auto !important; }
+.min-h-screen { min-height: 100vh !important; }
+
+// الموقع
+.relative { position: relative !important; }
+.absolute { position: absolute !important; }
+.fixed { position: fixed !important; }
+.sticky { position: sticky !important; }
+
+// الحدود
+.rounded-none { border-radius: $border-radius-none !important; }
+.rounded-sm { border-radius: $border-radius-sm !important; }
+.rounded { border-radius: $border-radius-md !important; }
+.rounded-lg { border-radius: $border-radius-lg !important; }
+.rounded-xl { border-radius: $border-radius-xl !important; }
+.rounded-full { border-radius: $border-radius-full !important; }
+
+.border { border: $border-width-thin solid $border-color !important; }
+.border-0 { border: 0 !important; }
+.border-top { border-top: $border-width-thin solid $border-color !important; }
+.border-bottom { border-bottom: $border-width-thin solid $border-color !important; }
+
+// الظلال
+.shadow-none { box-shadow: $shadow-none !important; }
+.shadow-sm { box-shadow: $shadow-sm !important; }
+.shadow { box-shadow: $shadow-md !important; }
+.shadow-lg { box-shadow: $shadow-lg !important; }
+.shadow-xl { box-shadow: $shadow-xl !important; }
+
+// الخلفيات
+.bg-white { background-color: $white !important; }
+.bg-primary { background-color: $bg-primary !important; }
+.bg-secondary { background-color: $bg-secondary !important; }
+.bg-tertiary { background-color: $bg-tertiary !important; }
+.bg-brand { background-color: $primary-color !important; }
+.bg-brand-light { background-color: $primary-lighter !important; }
+
+// تجاوز المحتوى
+.overflow-hidden { overflow: hidden !important; }
+.overflow-auto { overflow: auto !important; }
+.overflow-scroll { overflow: scroll !important; }
+.overflow-x-auto { overflow-x: auto !important; }
+.overflow-y-auto { overflow-y: auto !important; }
+
+// المؤشر
+.cursor-pointer { cursor: pointer !important; }
+.cursor-default { cursor: default !important; }
+.cursor-not-allowed { cursor: not-allowed !important; }
+
+// اختيار النص
+.select-none { user-select: none !important; }
+.select-text { user-select: text !important; }
+.select-all { user-select: all !important; }
+
+// الرؤية
+.visible { visibility: visible !important; }
+.invisible { visibility: hidden !important; }
+
+.opacity-0 { opacity: 0 !important; }
+.opacity-50 { opacity: 0.5 !important; }
+.opacity-100 { opacity: 1 !important; }
+
+// -----------------------------------
+// الاستجابة - Responsive Utilities
+// -----------------------------------
+
+// إخفاء على أحجام معينة
+@include media-down('sm') {
+  .hide-sm-down { display: none !important; }
+}
+
+@include media-down('md') {
+  .hide-md-down { display: none !important; }
+}
+
+@include media-down('lg') {
+  .hide-lg-down { display: none !important; }
+}
+
+@include media-up('sm') {
+  .hide-sm-up { display: none !important; }
+}
+
+@include media-up('md') {
+  .hide-md-up { display: none !important; }
+}
+
+@include media-up('lg') {
+  .hide-lg-up { display: none !important; }
+}
+
+// -----------------------------------
+// أنماط خاصة بالتطبيق
+// -----------------------------------
+
+// قسم الصفحة
+.page-section {
+  @include section-padding;
+}
+
+// عنوان القسم
+.section-header {
+  text-align: center;
+  margin-bottom: $spacing-8;
+
+  .section-title {
+    @include heading-2;
+    margin-bottom: $spacing-2;
+  }
+
+  .section-subtitle {
+    @include body-text;
+    max-width: 600px;
+    margin-inline: auto;
+  }
+}
+
+// الفاصل
+.divider {
+  border: 0;
+  border-top: $border-width-thin solid $border-color;
+  margin: $spacing-6 0;
+
+  &.divider-thick {
+    border-top-width: $border-width-medium;
+  }
+
+  &.divider-dashed {
+    border-style: dashed;
+  }
+}
+
+// شريط التمرير المخصص للتطبيق
+.app-scrollbar {
+  @include custom-scrollbar;
+}
+
+// -----------------------------------
+// حالات فارغة - Empty States
+// -----------------------------------
+
+.empty-state {
+  @include flex-column-center;
+  padding: $spacing-12;
+  text-align: center;
+
+  .empty-icon {
+    width: 80px;
+    height: 80px;
+    margin-bottom: $spacing-4;
+    color: $text-light;
+  }
+
+  .empty-title {
+    @include heading-4;
+    margin-bottom: $spacing-2;
+  }
+
+  .empty-description {
+    @include body-text;
+    max-width: 400px;
+    margin-bottom: $spacing-6;
+  }
+}
+
+// -----------------------------------
+// رسائل الحالة - Status Messages
+// -----------------------------------
+
+.status-message {
+  @include flex-center;
+  gap: $spacing-2;
+  padding: $spacing-2 $spacing-3;
+  font-size: $font-size-sm;
+  border-radius: $border-radius-md;
+
+  &.status-online {
+    background-color: $success-light;
+    color: $success-color;
+  }
+
+  &.status-offline {
+    background-color: $error-light;
+    color: $error-color;
+  }
+
+  &.status-pending {
+    background-color: $warning-light;
+    color: color.adjust($warning-color, $lightness: -20%);
+  }
+}

@@ -1,0 +1,447 @@
+// ===================================
+// RTL Support - دعم اللغة العربية
+// KFNL Digital Repository RTL Styles
+// ===================================
+
+@use 'variables' as *;
+@use 'mixins' as *;
+
+// -----------------------------------
+// الإعدادات الأساسية - Base RTL Settings
+// -----------------------------------
+
+[dir='rtl'] {
+  text-align: right;
+
+  // تعديل اتجاه الأيقونات
+  .icon-flip {
+    transform: scaleX(-1);
+  }
+
+  // تعديل الانتقالات
+  .slide-enter-from,
+  .slide-leave-to {
+    transform: translateX(20px);
+  }
+
+  // تعديل قوائم التنقل
+  .nav-arrow {
+    transform: rotate(180deg);
+  }
+}
+
+[dir='ltr'] {
+  text-align: left;
+
+  .slide-enter-from,
+  .slide-leave-to {
+    transform: translateX(-20px);
+  }
+}
+
+// -----------------------------------
+// خصائص منطقية - Logical Properties
+// -----------------------------------
+
+// فئات المسافات المنطقية
+.ms-auto {
+  margin-inline-start: auto;
+}
+
+.me-auto {
+  margin-inline-end: auto;
+}
+
+.mx-auto {
+  margin-inline: auto;
+}
+
+// توليد فئات المسافات الديناميكية
+// $spacing-values is defined in _variables.scss
+
+@each $name, $value in $spacing-values {
+  // Margin inline start
+  .ms-#{$name} {
+    margin-inline-start: $value;
+  }
+
+  // Margin inline end
+  .me-#{$name} {
+    margin-inline-end: $value;
+  }
+
+  // Margin inline (both)
+  .mx-#{$name} {
+    margin-inline: $value;
+  }
+
+  // Padding inline start
+  .ps-#{$name} {
+    padding-inline-start: $value;
+  }
+
+  // Padding inline end
+  .pe-#{$name} {
+    padding-inline-end: $value;
+  }
+
+  // Padding inline (both)
+  .px-#{$name} {
+    padding-inline: $value;
+  }
+}
+
+// -----------------------------------
+// الحدود - Borders RTL
+// -----------------------------------
+
+.border-start {
+  border-inline-start: $border-width-thin solid $border-color;
+}
+
+.border-end {
+  border-inline-end: $border-width-thin solid $border-color;
+}
+
+.border-start-0 {
+  border-inline-start: 0;
+}
+
+.border-end-0 {
+  border-inline-end: 0;
+}
+
+// Rounded corners
+.rounded-start {
+  border-start-start-radius: $border-radius-md;
+  border-end-start-radius: $border-radius-md;
+}
+
+.rounded-end {
+  border-start-end-radius: $border-radius-md;
+  border-end-end-radius: $border-radius-md;
+}
+
+// -----------------------------------
+// الموقع - Positioning RTL
+// -----------------------------------
+
+.start-0 {
+  inset-inline-start: 0;
+}
+
+.end-0 {
+  inset-inline-end: 0;
+}
+
+.start-auto {
+  inset-inline-start: auto;
+}
+
+.end-auto {
+  inset-inline-end: auto;
+}
+
+// -----------------------------------
+// Flexbox RTL
+// -----------------------------------
+
+.flex-row-reverse-rtl {
+  [dir='rtl'] & {
+    flex-direction: row-reverse;
+  }
+}
+
+.justify-start {
+  justify-content: flex-start;
+}
+
+.justify-end {
+  justify-content: flex-end;
+}
+
+// -----------------------------------
+// Float RTL
+// -----------------------------------
+
+.float-start {
+  float: inline-start;
+
+  // Fallback
+  @supports not (float: inline-start) {
+    [dir='rtl'] & {
+      float: right;
+    }
+    [dir='ltr'] &,
+    & {
+      float: left;
+    }
+  }
+}
+
+.float-end {
+  float: inline-end;
+
+  @supports not (float: inline-end) {
+    [dir='rtl'] & {
+      float: left;
+    }
+    [dir='ltr'] &,
+    & {
+      float: right;
+    }
+  }
+}
+
+// -----------------------------------
+// الأيقونات - Icons RTL
+// -----------------------------------
+
+// أيقونات تحتاج للعكس في RTL
+.icon-directional {
+  [dir='rtl'] & {
+    transform: scaleX(-1);
+  }
+}
+
+// أيقونات الأسهم
+.arrow-icon {
+  display: inline-block;
+  transition: transform $transition-duration-fast ease;
+
+  [dir='rtl'] & {
+    transform: rotate(180deg);
+  }
+}
+
+// أيقونة السهم للخلف
+.back-arrow {
+  [dir='rtl'] & {
+    transform: rotate(180deg);
+  }
+}
+
+// أيقونة السهم للأمام
+.forward-arrow {
+  [dir='rtl'] & {
+    transform: rotate(180deg);
+  }
+}
+
+// -----------------------------------
+// النماذج - Forms RTL
+// -----------------------------------
+
+// حقول الإدخال مع أيقونات
+.input-with-icon {
+  position: relative;
+
+  .input-icon-start {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    inset-inline-start: $spacing-3;
+    color: $text-muted;
+    pointer-events: none;
+  }
+
+  .input-icon-end {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    inset-inline-end: $spacing-3;
+    color: $text-muted;
+  }
+
+  input {
+    &.has-icon-start {
+      padding-inline-start: $spacing-10;
+    }
+
+    &.has-icon-end {
+      padding-inline-end: $spacing-10;
+    }
+  }
+}
+
+// مجموعات الإدخال
+.input-group {
+  display: flex;
+
+  .input-group-text {
+    display: flex;
+    align-items: center;
+    padding: $spacing-3 $spacing-4;
+    background-color: $bg-secondary;
+    border: $border-width-thin solid $border-color;
+    color: $text-secondary;
+
+    &:first-child {
+      border-inline-end: 0;
+      border-start-start-radius: $border-radius-md;
+      border-end-start-radius: $border-radius-md;
+    }
+
+    &:last-child {
+      border-inline-start: 0;
+      border-start-end-radius: $border-radius-md;
+      border-end-end-radius: $border-radius-md;
+    }
+  }
+
+  input {
+    flex: 1;
+
+    &:not(:first-child):not(:last-child) {
+      border-radius: 0;
+    }
+
+    &:first-child {
+      border-start-end-radius: 0;
+      border-end-end-radius: 0;
+    }
+
+    &:last-child {
+      border-start-start-radius: 0;
+      border-end-start-radius: 0;
+    }
+  }
+}
+
+// -----------------------------------
+// القوائم - Lists RTL
+// -----------------------------------
+
+.list-arrow {
+  li {
+    position: relative;
+    padding-inline-start: $spacing-6;
+
+    &::before {
+      content: '';
+      position: absolute;
+      inset-inline-start: 0;
+      top: 0.6em;
+      width: 6px;
+      height: 6px;
+      border-inline-end: 2px solid $primary-color;
+      border-bottom: 2px solid $primary-color;
+      transform: rotate(-45deg);
+
+      [dir='rtl'] & {
+        transform: rotate(135deg);
+      }
+    }
+  }
+}
+
+// -----------------------------------
+// التنبيهات - Alerts RTL
+// -----------------------------------
+
+.alert {
+  &.alert-with-icon {
+    display: flex;
+    gap: $spacing-3;
+    align-items: flex-start;
+
+    .alert-icon {
+      flex-shrink: 0;
+    }
+
+    .alert-content {
+      flex: 1;
+    }
+
+    .alert-close {
+      margin-inline-start: auto;
+    }
+  }
+}
+
+// -----------------------------------
+// الجداول - Tables RTL
+// -----------------------------------
+
+table {
+  th, td {
+    text-align: start;
+  }
+}
+
+// -----------------------------------
+// الشريط الجانبي - Sidebar RTL
+// -----------------------------------
+
+.sidebar {
+  inset-inline-start: 0;
+  inset-inline-end: auto;
+  border-inline-end: $border-width-thin solid $border-color;
+  border-inline-start: none;
+
+  &.sidebar-end {
+    inset-inline-start: auto;
+    inset-inline-end: 0;
+    border-inline-start: $border-width-thin solid $border-color;
+    border-inline-end: none;
+  }
+}
+
+// -----------------------------------
+// مسار التنقل - Breadcrumb RTL
+// -----------------------------------
+
+.breadcrumb {
+  .breadcrumb-separator {
+    margin-inline: $spacing-2;
+
+    [dir='rtl'] & {
+      transform: rotate(180deg);
+    }
+  }
+}
+
+// -----------------------------------
+// ترقيم الصفحات - Pagination RTL
+// -----------------------------------
+
+.pagination {
+  .pagination-prev {
+    [dir='rtl'] & .icon {
+      transform: rotate(180deg);
+    }
+  }
+
+  .pagination-next {
+    [dir='rtl'] & .icon {
+      transform: rotate(180deg);
+    }
+  }
+}
+
+// -----------------------------------
+// الانتقالات - Transitions RTL
+// -----------------------------------
+
+.slide-fade-enter-active,
+.slide-fade-leave-active {
+  transition: all $transition-duration-normal ease;
+}
+
+.slide-fade-enter-from {
+  opacity: 0;
+  transform: translateX(-20px);
+
+  [dir='rtl'] & {
+    transform: translateX(20px);
+  }
+}
+
+.slide-fade-leave-to {
+  opacity: 0;
+  transform: translateX(20px);
+
+  [dir='rtl'] & {
+    transform: translateX(-20px);
+  }
+}

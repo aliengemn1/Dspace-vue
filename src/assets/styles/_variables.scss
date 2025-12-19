@@ -1,0 +1,260 @@
+// ===================================
+// المتغيرات الأساسية - كود المنصات
+// KFNL Digital Repository Variables
+// ===================================
+
+// -----------------------------------
+// الألوان - Colors
+// -----------------------------------
+
+// الألوان الأساسية (الأخضر السعودي)
+$primary-color: #006C35;
+$primary-dark: #005529;
+$primary-darker: #003D1F;
+$primary-light: #008C45;
+$primary-lighter: #E8F5EE;
+
+// الألوان الثانوية
+$secondary-color: #1B4D3E;
+$secondary-dark: #132F28;
+$secondary-light: #2A6B57;
+
+// اللون الذهبي (تمييز)
+$accent-color: #C8A415;
+$accent-dark: #A68912;
+$accent-light: #E5C94D;
+
+// ألوان النص
+$text-primary: #1A1A1A;
+$text-secondary: #4A4A4A;
+$text-muted: #757575;
+$text-light: #9E9E9E;
+$text-inverse: #FFFFFF;
+
+// ألوان الخلفية
+$bg-primary: #FFFFFF;
+$bg-secondary: #F5F7FA;
+$bg-tertiary: #E8EAED;
+$bg-dark: #1A1A1A;
+
+// الألوان المحايدة
+$white: #FFFFFF;
+$black: #000000;
+$gray-50: #FAFAFA;
+$gray-100: #F5F5F5;
+$gray-200: #EEEEEE;
+$gray-300: #E0E0E0;
+$gray-400: #BDBDBD;
+$gray-500: #9E9E9E;
+$gray-600: #757575;
+$gray-700: #616161;
+$gray-800: #424242;
+$gray-900: #212121;
+
+// ألوان الحالة
+$success-color: #28A745;
+$success-light: #D4EDDA;
+$warning-color: #FFC107;
+$warning-light: #FFF3CD;
+$error-color: #DC3545;
+$error-light: #F8D7DA;
+$info-color: #17A2B8;
+$info-light: #D1ECF1;
+
+// ألوان الروابط
+$link-color: $primary-color;
+$link-hover-color: $primary-dark;
+$link-visited-color: #551A8B;
+
+// -----------------------------------
+// الخطوط - Typography
+// -----------------------------------
+
+// عائلات الخطوط
+$font-family-primary: 'IBM Plex Sans Arabic', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+$font-family-heading: 'IBM Plex Sans Arabic', sans-serif;
+$font-family-mono: 'IBM Plex Mono', 'Courier New', Courier, monospace;
+
+// أحجام الخطوط
+$font-size-xs: 0.75rem;     // 12px
+$font-size-sm: 0.875rem;    // 14px
+$font-size-base: 1rem;      // 16px
+$font-size-md: 1rem;        // 16px
+$font-size-lg: 1.125rem;    // 18px
+$font-size-xl: 1.25rem;     // 20px
+$font-size-2xl: 1.5rem;     // 24px
+$font-size-3xl: 1.875rem;   // 30px
+$font-size-4xl: 2.25rem;    // 36px
+$font-size-5xl: 3rem;       // 48px
+
+// أوزان الخطوط
+$font-weight-light: 300;
+$font-weight-regular: 400;
+$font-weight-medium: 500;
+$font-weight-semibold: 600;
+$font-weight-bold: 700;
+
+// ارتفاع السطر
+$line-height-tight: 1.25;
+$line-height-normal: 1.5;
+$line-height-relaxed: 1.75;
+$line-height-loose: 2;
+
+// تباعد الحروف
+$letter-spacing-tight: -0.025em;
+$letter-spacing-normal: 0;
+$letter-spacing-wide: 0.025em;
+
+// -----------------------------------
+// المسافات - Spacing
+// -----------------------------------
+
+$spacing-unit: 0.25rem; // 4px
+
+$spacing-0: 0;
+$spacing-1: 0.25rem;    // 4px
+$spacing-2: 0.5rem;     // 8px
+$spacing-3: 0.75rem;    // 12px
+$spacing-4: 1rem;       // 16px
+$spacing-5: 1.25rem;    // 20px
+$spacing-6: 1.5rem;     // 24px
+$spacing-8: 2rem;       // 32px
+$spacing-10: 2.5rem;    // 40px
+$spacing-12: 3rem;      // 48px
+$spacing-16: 4rem;      // 64px
+$spacing-20: 5rem;      // 80px
+$spacing-24: 6rem;      // 96px
+
+// اختصارات المسافات
+$spacing-xs: $spacing-1;
+$spacing-sm: $spacing-2;
+$spacing-md: $spacing-4;
+$spacing-lg: $spacing-6;
+$spacing-xl: $spacing-8;
+$spacing-2xl: $spacing-12;
+
+// خريطة المسافات للتوليد الديناميكي
+$spacing-values: (
+  '0': 0,
+  '1': $spacing-1,
+  '2': $spacing-2,
+  '3': $spacing-3,
+  '4': $spacing-4,
+  '5': $spacing-5,
+  '6': $spacing-6,
+  '8': $spacing-8
+);
+
+// -----------------------------------
+// الحدود - Borders
+// -----------------------------------
+
+$border-width-thin: 1px;
+$border-width-medium: 2px;
+$border-width-thick: 4px;
+
+$border-radius-none: 0;
+$border-radius-sm: 0.25rem;   // 4px
+$border-radius-md: 0.5rem;    // 8px
+$border-radius-lg: 0.75rem;   // 12px
+$border-radius-xl: 1rem;      // 16px
+$border-radius-2xl: 1.5rem;   // 24px
+$border-radius-full: 9999px;
+
+$border-color: $gray-300;
+$border-color-light: $gray-200;
+$border-color-dark: $gray-400;
+
+// -----------------------------------
+// الظلال - Shadows
+// -----------------------------------
+
+$shadow-none: none;
+$shadow-xs: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+$shadow-sm: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
+$shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+$shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+$shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+$shadow-2xl: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+$shadow-inner: inset 0 2px 4px 0 rgba(0, 0, 0, 0.06);
+
+// -----------------------------------
+// نقاط التوقف - Breakpoints
+// -----------------------------------
+
+$breakpoint-xs: 0;
+$breakpoint-sm: 576px;
+$breakpoint-md: 768px;
+$breakpoint-lg: 992px;
+$breakpoint-xl: 1200px;
+$breakpoint-2xl: 1400px;
+
+$breakpoints: (
+  'xs': $breakpoint-xs,
+  'sm': $breakpoint-sm,
+  'md': $breakpoint-md,
+  'lg': $breakpoint-lg,
+  'xl': $breakpoint-xl,
+  '2xl': $breakpoint-2xl
+);
+
+// -----------------------------------
+// الحاويات - Containers
+// -----------------------------------
+
+$container-max-width: 1320px;
+$container-padding: $spacing-4;
+
+$container-widths: (
+  'sm': 540px,
+  'md': 720px,
+  'lg': 960px,
+  'xl': 1140px,
+  '2xl': 1320px
+);
+
+// -----------------------------------
+// التحولات - Transitions
+// -----------------------------------
+
+$transition-duration-fast: 150ms;
+$transition-duration-normal: 250ms;
+$transition-duration-slow: 350ms;
+
+$transition-timing-ease: ease;
+$transition-timing-ease-in: ease-in;
+$transition-timing-ease-out: ease-out;
+$transition-timing-ease-in-out: ease-in-out;
+$transition-timing-cubic: cubic-bezier(0.455, 0.03, 0.515, 0.955);
+
+$transition-default: all $transition-duration-normal $transition-timing-ease-in-out;
+$transition-fast: all $transition-duration-fast $transition-timing-ease-in-out;
+$transition-slow: all $transition-duration-slow $transition-timing-ease-in-out;
+
+// -----------------------------------
+// الترتيب - Z-Index
+// -----------------------------------
+
+$z-index-dropdown: 1000;
+$z-index-sticky: 1020;
+$z-index-fixed: 1030;
+$z-index-modal-backdrop: 1040;
+$z-index-modal: 1050;
+$z-index-popover: 1060;
+$z-index-tooltip: 1070;
+$z-index-toast: 1080;
+
+// -----------------------------------
+// الرأس والتذييل - Header & Footer
+// -----------------------------------
+
+$header-height: 80px;
+$header-height-mobile: 64px;
+$footer-min-height: 300px;
+
+// -----------------------------------
+// الشريط الجانبي - Sidebar
+// -----------------------------------
+
+$sidebar-width: 280px;
+$sidebar-collapsed-width: 64px;

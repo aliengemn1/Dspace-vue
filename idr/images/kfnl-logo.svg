@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>404 Not Found</title>
+  <style>
+    body {
+      margin: 0;
+      font-family: Arial, sans-serif;
+      background: url("https://static.wixstatic.com/media/193b21_51d821f7396d4316ae552d409abdb05f~mv2.png/v1/fill/w_1895,h_905,al_c,q_90,usm_0.66_1.00_0.01/193b21_51d821f7396d4316ae552d409abdb05f~mv2.webp") no-repeat center center fixed;
+      background-size: cover;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+    }
+
+    .overlay {
+      background-color: rgba(0, 0, 0, 0.25);
+      position: absolute;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      z-index: 0;
+    }
+
+    .container {
+      position: relative;
+      z-index: 1;
+      text-align: center;
+      background-color: rgba(255, 255, 255, 0.85);
+      padding: 50px;
+      border-radius: 12px;
+      box-shadow: 0 4px 30px rgba(0, 0, 0, 0.2);
+      max-width: 650px;
+      width: 90%;
+    }
+
+    .logo {
+      margin-bottom: 25px;
+    }
+
+    .logo img {
+      width: 330px;
+      height: auto;
+    }
+
+    h1 {
+      font-size: 36px;
+      color: #2c3e50;
+      margin-bottom: 10px;
+    }
+
+    p {
+      font-size: 18px;
+      color: #7f8c8d;
+      margin: 10px 0;
+    }
+
+    .error-info {
+      margin-top: 30px;
+      font-size: 14px;
+      color: #95a5a6;
+    }
+
+    @media (max-width: 600px) {
+      .logo img {
+        width: 200px;
+      }
+
+      h1 {
+        font-size: 28px;
+      }
+
+      p {
+        font-size: 16px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="overlay"></div>
+  <div class="container">
+    <div class="logo">
+      <img src="https://mssp.safedecision.com.sa/uploads/logo/big-Ekumzi4CHt.png" alt="Company Logo">
+    </div>
+    <h1>404 - Page Not Found</h1>
+    <p>Sorry, the page you are looking for doesn't exist or has been moved.</p>
+
+    <div class="error-info">
+      <p><strong>Error ID:</strong> 19b1416ebb8-d389274<br>
+      <strong>Time & Date:</strong> 2025-12-12 19:43:25 GMT<br>
+      <strong>Client IP:</strong> 2.88.109.41</p>
+    </div>
+  </div>
+</body>
+</html>
+

@@ -1,0 +1,508 @@
+{
+  "header": {
+    "title": "المستودع الرقمي",
+    "subtitle": "مكتبة الملك فهد الوطنية",
+    "mainSite": "الموقع الرئيسي",
+    "switchLanguage": "تغيير اللغة",
+    "goToHome": "الذهاب للصفحة الرئيسية"
+  },
+  "nav": {
+    "home": "الرئيسية",
+    "browse": "تصفح",
+    "communities": "المجموعات",
+    "collections": "المجموعات",
+    "search": "البحث",
+    "virtualTour": "جولة افتراضية",
+    "about": "عن المستودع",
+    "contact": "اتصل بنا",
+    "help": "المساعدة",
+    "main": "التنقل الرئيسي",
+    "mobile": "قائمة التنقل",
+    "toggleMenu": "فتح/إغلاق القائمة"
+  },
+  "home": {
+    "hero": {
+      "title": "المكتبة الرقمية",
+      "subtitle": "اكتشف ثروة المعرفة",
+      "description": "الوصول إلى أكثر من 60,000 رسالة علمية و300,000 دورية وآلاف المخطوطات النادرة"
+    },
+    "stats": {
+      "title": "إحصائيات المستودع",
+      "items": "عنصر",
+      "communities": "مجتمع",
+      "collections": "مجموعة",
+      "downloads": "تحميل"
+    },
+    "recent": {
+      "title": "أحدث الإضافات",
+      "viewAll": "عرض الكل"
+    },
+    "mostViewed": {
+      "title": "الأكثر مشاهدة",
+      "viewAll": "عرض الكل"
+    },
+    "featured": {
+      "title": "مجموعات مميزة",
+      "viewAll": "استعراض جميع المجموعات"
+    },
+    "browse": {
+      "title": "تصفح المحتوى",
+      "byAuthor": "حسب المؤلف",
+      "bySubject": "حسب الموضوع",
+      "byDate": "حسب التاريخ",
+      "byType": "حسب النوع"
+    }
+  },
+  "search": {
+    "placeholder": "ابحث في المستودع...",
+    "button": "بحث",
+    "clear": "مسح البحث",
+    "submit": "تنفيذ البحث",
+    "toggle": "فتح/إغلاق البحث",
+    "advanced": "بحث متقدم",
+    "advancedSearch": "بحث متقدم",
+    "simpleSearch": "بحث بسيط",
+    "selectCategory": "اختر الفئة",
+    "results": "نتائج البحث",
+    "resultsCount": "{count} نتيجة",
+    "noResults": "لم يتم العثور على نتائج",
+    "noResultsDescription": "جرب تعديل كلمات البحث أو استخدم البحث المتقدم",
+    "filters": "استكشف",
+    "sortBy": "ترتيب حسب",
+    "relevance": "الأكثر صلة",
+    "dateNewest": "الأحدث",
+    "dateOldest": "الأقدم",
+    "titleAZ": "العنوان (أ-ي)",
+    "titleZA": "العنوان (ي-أ)",
+    "advancedFields": {
+      "keyword": "الكلمات المفتاحية",
+      "title": "العنوان",
+      "author": "المؤلف",
+      "subject": "الموضوع",
+      "dateFrom": "التاريخ من",
+      "dateTo": "التاريخ إلى",
+      "abstract": "الملخص",
+      "identifier": "المعرف (Handle/DOI)",
+      "type": "النوع",
+      "language": "اللغة",
+      "publisher": "الناشر",
+      "searchButton": "بحث",
+      "clearButton": "مسح الكل",
+      "anyField": "أي حقل",
+      "addField": "إضافة حقل",
+      "removeField": "إزالة",
+      "booleanOperator": "العملية المنطقية",
+      "and": "و (AND)",
+      "or": "أو (OR)",
+      "not": "ليس (NOT)"
+    },
+    "searchMode": {
+      "label": "نوع البحث",
+      "contains": "يحتوي على",
+      "startsWith": "يبدأ بـ",
+      "exact": "مطابقة تامة"
+    },
+    "categories": {
+      "all": "الكل",
+      "general": "بحث عام",
+      "title": "العنوان",
+      "author": "المؤلف",
+      "subject": "الموضوع",
+      "publisher": "الناشر",
+      "date": "التاريخ"
+    },
+    "filterBy": {
+      "author": "المؤلف",
+      "subject": "الموضوع",
+      "date": "التاريخ",
+      "type": "النوع",
+      "community": "المجتمع",
+      "collection": "المجموعة"
+    }
+  },
+  "browse": {
+    "title": "تصفح المكتبة الرقمية",
+    "communities": "المجموعات",
+    "collections": "المجموعات",
+    "items": "العناصر",
+    "byAuthor": "تصفح حسب المؤلف",
+    "bySubject": "تصفح حسب الموضوع",
+    "byDate": "تصفح حسب التاريخ",
+    "byType": "تصفح حسب النوع",
+    "byPublisher": "تصفح حسب الناشر"
+  },
+  "community": {
+    "title": "المجتمع",
+    "collections": "المجموعات",
+    "subcommunities": "المجموعات الفرعية",
+    "items": "العناصر",
+    "description": "الوصف"
+  },
+  "collection": {
+    "title": "المجموعة",
+    "items": "العناصر",
+    "description": "الوصف",
+    "recentItems": "أحدث العناصر"
+  },
+  "item": {
+    "title": "تفاصيل العنصر",
+    "metadata": "البيانات الوصفية",
+    "files": "الملفات",
+    "download": "تحميل",
+    "preview": "معاينة",
+    "openPdf": "فتح PDF",
+    "closePdf": "إغلاق المعاينة",
+    "citation": "الاستشهاد المرجعي",
+    "copyCitation": "نسخ الاستشهاد",
+    "share": "مشاركة",
+    "copyLink": "نسخ الرابط",
+    "relatedItems": "عناصر ذات صلة",
+    "persistentIdentifiers": "الرابط الدائم",
+    "handle": "المعرف الدائم",
+    "doiLabel": "معرف الكائن الرقمي",
+    "viewer": {
+      "zoomIn": "تكبير",
+      "zoomOut": "تصغير",
+      "fullscreen": "ملء الشاشة",
+      "exitFullscreen": "الخروج من ملء الشاشة",
+      "loadError": "تعذر تحميل الملف",
+      "prevPage": "الصفحة السابقة",
+      "nextPage": "الصفحة التالية"
+    },
+    "fields": {
+      "title": "العنوان",
+      "author": "المؤلف",
+      "date": "التاريخ",
+      "type": "النوع",
+      "subject": "الموضوعات",
+      "abstract": "الملخص",
+      "language": "اللغة",
+      "publisher": "الناشر",
+      "identifier": "المعرف",
+      "rights": "الحقوق"
+    }
+  },
+  "about": {
+    "title": "عن المستودع الرقمي",
+    "mission": "رسالتنا",
+    "vision": "رؤيتنا",
+    "goals": "أهدافنا",
+    "policies": "السياسات",
+    "contact": "تواصل معنا"
+  },
+  "footer": {
+    "title": "المستودع الرقمي",
+    "subtitle": "مكتبة الملك فهد الوطنية",
+    "description": "المستودع الرقمي المؤسسي لمكتبة الملك فهد الوطنية، يوفر الوصول المفتوح للإنتاج الفكري السعودي والعربي.",
+    "quickLinks": "روابط سريعة",
+    "help": "المساعدة والدعم",
+    "userGuide": "دليل المستخدم",
+    "faq": "الأسئلة الشائعة",
+    "policies": "السياسات والإرشادات",
+    "accessibilty": "إمكانية الوصول",
+    "contactUs": "اتصل بنا",
+    "address": "طريق الملك فهد، حي العليا، الرياض، المملكة العربية السعودية",
+    "copyright": "© {year} مكتبة الملك فهد الوطنية. جميع الحقوق محفوظة.",
+    "privacy": "سياسة الخصوصية",
+    "terms": "الشروط والأحكام"
+  },
+  "common": {
+    "close": "إغلاق",
+    "loading": "جاري التحميل...",
+    "fullscreen": "ملء الشاشة",
+    "items": "عناصر",
+    "retry": "إعادة المحاولة",
+    "error": "حدث خطأ",
+    "noData": "لا توجد بيانات"
+  },
+  "virtualTour": {
+    "loading": "جاري تحميل الجولة الافتراضية...",
+    "welcomeTitle": "مرحباً بكم في المستودع الرقمي",
+    "welcomeSubtitle": "اكتشف المعرفة في مكتبة الملك فهد الوطنية",
+    "digitalItems": "عنصر رقمي",
+    "virtualHalls": "قاعات افتراضية",
+    "available": "متاح دائماً",
+    "chooseHall": "اختر القاعة للاستكشاف",
+    "toggleMap": "إظهار/إخفاء الخريطة",
+    "toggleGuide": "إظهار/إخفاء الدليل",
+    "goBack": "العودة",
+    "backToEntrance": "العودة للمدخل",
+    "entrance": "المدخل",
+    "map": "خريطة الجولة",
+    "currentLocation": "موقعك الحالي",
+    "availableHalls": "القاعات المتاحة",
+    "guide": "دليل الجولة",
+    "allTips": "جميع النصائح",
+    "itemsInView": "عناصر معروضة",
+    "loadingShelf": "جاري تحميل الرف...",
+    "emptyShelf": "هذا الرف فارغ حالياً",
+    "viewDetails": "عرض التفاصيل",
+    "aboutThisHall": "عن هذه القاعة",
+    "searchInHall": "البحث في القاعة",
+    "downloadAvailable": "التحميل متاح",
+    "previewFiles": "معاينة الملفات",
+    "details": "التفاصيل",
+    "readPdf": "قراءة PDF",
+    "viewImages": "عرض الصور",
+    "watchVideo": "مشاهدة الفيديو",
+    "listenAudio": "الاستماع للصوت",
+    "openInLibrary": "فتح في المكتبة",
+    "viewFullRecord": "عرض السجل الكامل",
+    "hallDescription": {
+      "books": "تضم هذه القاعة مجموعة واسعة من الكتب في مختلف مجالات المعرفة، من الأدب والتاريخ إلى العلوم والتقنية",
+      "theses": "قاعة مخصصة للرسائل الجامعية من مختلف الجامعات السعودية، تشمل رسائل الماجستير والدكتوراه",
+      "periodicals": "تحتوي على مجموعة متنوعة من المجلات العلمية والصحف والنشرات الدورية التاريخية والمعاصرة",
+      "manuscripts": "كنوز من المخطوطات الإسلامية والعربية النادرة، تعود لعدة قرون من الزمن",
+      "media": "مجموعة متنوعة من الوسائط المتعددة تشمل الصور والخرائط والتسجيلات الصوتية والمرئية"
+    }
+  },
+  "pagination": {
+    "first": "الأول",
+    "last": "الأخير",
+    "next": "التالي",
+    "previous": "السابق",
+    "page": "صفحة",
+    "of": "من",
+    "showing": "عرض",
+    "to": "إلى",
+    "results": "نتيجة"
+  },
+  "accessibility": {
+    "skipToContent": "تخطي إلى المحتوى الرئيسي",
+    "mainNavigation": "التنقل الرئيسي",
+    "searchForm": "نموذج البحث",
+    "breadcrumb": "مسار التنقل"
+  },
+  "errors": {
+    "404": {
+      "title": "الصفحة غير موجودة",
+      "description": "عذراً، الصفحة التي تبحث عنها غير موجودة أو تم نقلها.",
+      "backHome": "العودة للرئيسية"
+    },
+    "500": {
+      "title": "خطأ في الخادم",
+      "description": "عذراً، حدث خطأ في الخادم. يرجى المحاولة لاحقاً."
+    },
+    "network": {
+      "title": "خطأ في الاتصال",
+      "description": "تعذر الاتصال بالخادم. يرجى التحقق من اتصالك بالإنترنت."
+    }
+  },
+  "cookies": {
+    "title": "نستخدم ملفات تعريف الارتباط",
+    "description": "نستخدم ملفات تعريف الارتباط لتحسين تجربتك وتحليل استخدام الموقع.",
+    "acceptAll": "قبول الكل",
+    "acceptNecessary": "الضرورية فقط"
+  },
+  "sitemap": {
+    "title": "خريطة الموقع",
+    "heroTitle": "خريطة المستودع الرقمي التفاعلية",
+    "heroDescription": "اكتشف هيكل المستودع ورحلة المستخدم وتوصيات تجربة المستخدم لمكتبة الملك فهد الوطنية",
+    "tabs": {
+      "architecture": "هيكل المعلومات",
+      "journey": "رحلة المستخدم",
+      "ux": "توصيات UX"
+    },
+    "exportTitle": "تصدير الخريطة",
+    "exportDescription": "يمكنك طباعة هذه الخريطة أو تصديرها كمستند PDF",
+    "print": "طباعة",
+    "iaMap": {
+      "title": "خريطة هيكل المعلومات",
+      "description": "نظرة شاملة على تنظيم المحتوى والخدمات الرقمية في المستودع",
+      "userTypes": "أنواع المستخدمين",
+      "users": {
+        "researcher": "باحثون أكاديميون",
+        "student": "طلاب",
+        "staff": "موظفو المكتبة",
+        "public": "عامة المستخدمين",
+        "publisher": "ناشرون ومودعون"
+      },
+      "mainSections": "الأقسام الرئيسية",
+      "sections": {
+        "home": "الرئيسية",
+        "search": "البحث",
+        "browse": "التصفح",
+        "collections": "المجموعات",
+        "legalDeposit": "الإيداع النظامي",
+        "stats": "الإحصاءات",
+        "about": "عن المكتبة"
+      },
+      "subsections": {
+        "results": "النتائج",
+        "advanced": "البحث المتقدم",
+        "bySubject": "حسب الموضوع",
+        "byAuthor": "حسب المؤلف",
+        "byYear": "حسب السنة",
+        "byType": "حسب النوع",
+        "byLanguage": "حسب اللغة",
+        "books": "الكتب",
+        "periodicals": "الدوريات",
+        "theses": "الرسائل الجامعية",
+        "manuscripts": "المخطوطات",
+        "newspapers": "الصحف",
+        "maps": "الخرائط",
+        "media": "الوسائط",
+        "submission": "تقديم الإيداع",
+        "tracking": "تتبع الطلبات",
+        "guidelines": "الإرشادات",
+        "views": "المشاهدات",
+        "downloads": "التحميلات",
+        "reports": "التقارير",
+        "mission": "الرسالة",
+        "policies": "السياسات",
+        "contact": "اتصل بنا",
+        "help": "المساعدة"
+      },
+      "itemPage": "صفحة العنصر الرقمي",
+      "itemComponents": {
+        "metadata": "البيانات الوصفية",
+        "preview": "المعاينة",
+        "download": "التحميل",
+        "stats": "الإحصاءات",
+        "identifiers": "المعرفات الدائمة",
+        "citation": "الاقتباس",
+        "related": "عناصر ذات صلة"
+      },
+      "previewTypes": "أنواع المعاينة",
+      "digitalCollections": "المجموعات الرقمية",
+      "collections": {
+        "books": "الكتب",
+        "periodicals": "الدوريات",
+        "theses": "الرسائل الجامعية",
+        "manuscripts": "المخطوطات",
+        "newspapers": "الصحف",
+        "maps": "الخرائط",
+        "media": "الصور والوسائط"
+      }
+    },
+    "journey": {
+      "title": "خريطة رحلة المستخدم",
+      "description": "تتبع مسار المستخدم من الدخول إلى إتمام المهمة",
+      "selectFlow": "اختر مسار المستخدم",
+      "flows": {
+        "researcherFlow": "مسار الباحث",
+        "researcherDesc": "يبدأ الباحث بالبحث المتقدم أو التصفح، ثم يستعرض النتائج ويفحص العناصر بالتفصيل قبل التحميل أو الاستشهاد",
+        "studentFlow": "مسار الطالب",
+        "studentDesc": "يركز الطالب على البحث السريع والوصول المباشر للمحتوى للدراسة والبحث",
+        "publisherFlow": "مسار الناشر",
+        "publisherDesc": "يقوم الناشرون بتقديم الإيداع النظامي ومتابعة حالة طلباتهم"
+      },
+      "stages": "مراحل الرحلة",
+      "stageNames": {
+        "entry": "الدخول",
+        "discovery": "الاكتشاف",
+        "results": "النتائج",
+        "itemView": "عرض العنصر",
+        "action": "الإجراء",
+        "exit": "الخروج"
+      },
+      "actions": {
+        "directUrl": "رابط مباشر",
+        "searchEngine": "محرك بحث",
+        "socialMedia": "وسائل التواصل",
+        "referral": "إحالة",
+        "simpleSearch": "بحث بسيط",
+        "advancedSearch": "بحث متقدم",
+        "browse": "تصفح",
+        "filters": "فلاتر",
+        "viewResults": "عرض النتائج",
+        "sortResults": "ترتيب",
+        "filterResults": "تصفية",
+        "paginate": "تصفح الصفحات",
+        "viewMetadata": "عرض البيانات",
+        "previewFile": "معاينة الملف",
+        "viewStats": "عرض الإحصاءات",
+        "checkIdentifiers": "المعرفات",
+        "download": "تحميل",
+        "cite": "استشهاد",
+        "share": "مشاركة",
+        "viewRelated": "عناصر مرتبطة",
+        "saveSearch": "حفظ البحث",
+        "bookmark": "إشارة مرجعية",
+        "subscribe": "اشتراك",
+        "feedback": "ملاحظات"
+      },
+      "touchpoints": "نقاط التفاعل",
+      "touchpointNames": {
+        "hover": "تمرير الماوس",
+        "click": "النقر",
+        "filter": "التصفية",
+        "scroll": "التمرير"
+      },
+      "touchpointDescs": {
+        "hoverDesc": "عرض معلومات إضافية عند تمرير الماوس",
+        "clickDesc": "التفاعل مع العناصر والروابط",
+        "filterDesc": "تضييق النتائج باستخدام الفلاتر",
+        "scrollDesc": "تصفح المحتوى الطويل"
+      },
+      "flowVisualization": "تصور المسار",
+      "directBrowse": "تصفح مباشر",
+      "refineSearch": "تحسين البحث"
+    },
+    "ux": {
+      "title": "توصيات تجربة المستخدم",
+      "description": "إرشادات ومعايير لتحسين تجربة المستخدم في المستودع الرقمي",
+      "categories": {
+        "accessibility": "إمكانية الوصول",
+        "performance": "الأداء",
+        "navigation": "التنقل",
+        "responsiveness": "الاستجابة",
+        "bilingual": "ثنائية اللغة",
+        "sustainability": "الاستدامة الرقمية"
+      },
+      "priority": {
+        "high": "أولوية عالية",
+        "medium": "أولوية متوسطة",
+        "low": "أولوية منخفضة"
+      },
+      "items": {
+        "wcag": "التوافق مع معايير WCAG 2.1",
+        "screenReader": "دعم قارئات الشاشة",
+        "keyboardNav": "التنقل بلوحة المفاتيح",
+        "colorContrast": "تباين الألوان المناسب",
+        "focusIndicators": "مؤشرات التركيز الواضحة",
+        "lazyLoading": "التحميل الكسول للصور",
+        "caching": "التخزين المؤقت الذكي",
+        "compression": "ضغط الملفات",
+        "cdnUsage": "استخدام شبكة توزيع المحتوى",
+        "codeOptimization": "تحسين الكود",
+        "breadcrumbs": "مسار التنقل الواضح",
+        "searchSuggestions": "اقتراحات البحث",
+        "facetedSearch": "البحث متعدد الأوجه",
+        "relatedContent": "المحتوى ذو الصلة",
+        "clearCTA": "أزرار الإجراء الواضحة",
+        "mobileFirst": "تصميم الجوال أولاً",
+        "touchFriendly": "دعم اللمس",
+        "adaptiveImages": "صور متكيفة",
+        "responsiveTypography": "خطوط متجاوبة",
+        "flexibleGrids": "شبكات مرنة",
+        "rtlSupport": "دعم الاتجاه من اليمين لليسار",
+        "languageSwitch": "تبديل اللغة السلس",
+        "culturalAdaptation": "التكيف الثقافي",
+        "contentParity": "تكافؤ المحتوى",
+        "dynamicDirection": "الاتجاه الديناميكي",
+        "persistentIds": "المعرفات الدائمة",
+        "metadataStandards": "معايير البيانات الوصفية",
+        "preservation": "الحفظ الرقمي",
+        "interoperability": "التشغيل البيني",
+        "versionControl": "التحكم في الإصدارات"
+      },
+      "summary": "ملخص المعايير",
+      "compatible": "متوافق",
+      "bilingualSupport": "دعم ثنائي اللغة",
+      "accessibilityLevel": "مستوى إمكانية الوصول",
+      "responsiveDesign": "تصميم متجاوب",
+      "keyPrinciples": "المبادئ الأساسية",
+      "principles": {
+        "userCentric": "التركيز على المستخدم",
+        "userCentricDesc": "تصميم يضع احتياجات المستخدم في المقام الأول",
+        "accessible": "سهولة الوصول",
+        "accessibleDesc": "ضمان وصول جميع المستخدمين للمحتوى",
+        "sustainable": "الاستدامة",
+        "sustainableDesc": "حلول قابلة للتطوير والصيانة على المدى الطويل",
+        "institutional": "الهوية المؤسسية",
+        "institutionalDesc": "تعزيز هوية مكتبة الملك فهد الوطنية"
+      }
+    }
+  }
+}

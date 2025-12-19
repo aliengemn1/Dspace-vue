@@ -1,0 +1,466 @@
+{
+  "header": {
+    "title": "Digital Repository",
+    "subtitle": "King Fahd National Library",
+    "mainSite": "Main Website",
+    "switchLanguage": "Switch Language",
+    "goToHome": "Go to Home"
+  },
+  "nav": {
+    "home": "Home",
+    "browse": "Browse",
+    "communities": "Communities",
+    "collections": "Collections",
+    "search": "Search",
+    "about": "About",
+    "contact": "Contact Us",
+    "help": "Help",
+    "main": "Main Navigation",
+    "mobile": "Navigation Menu",
+    "toggleMenu": "Toggle Menu"
+  },
+  "home": {
+    "hero": {
+      "title": "Digital Library",
+      "subtitle": "Discover the Wealth of Knowledge",
+      "description": "Access over 60,000 theses, 300,000 periodicals, and thousands of rare manuscripts"
+    },
+    "stats": {
+      "title": "Repository Statistics",
+      "items": "Items",
+      "communities": "Communities",
+      "collections": "Collections",
+      "downloads": "Downloads"
+    },
+    "recent": {
+      "title": "Recent Additions",
+      "viewAll": "View All"
+    },
+    "mostViewed": {
+      "title": "Most Viewed",
+      "viewAll": "View All"
+    },
+    "featured": {
+      "title": "Featured Collections",
+      "viewAll": "Browse All Collections"
+    },
+    "browse": {
+      "title": "Browse Content",
+      "byAuthor": "By Author",
+      "bySubject": "By Subject",
+      "byDate": "By Date",
+      "byType": "By Type"
+    }
+  },
+  "search": {
+    "placeholder": "Search the repository...",
+    "button": "Search",
+    "clear": "Clear search",
+    "submit": "Submit search",
+    "toggle": "Toggle search",
+    "advanced": "Advanced Search",
+    "advancedSearch": "Advanced Search",
+    "simpleSearch": "Simple Search",
+    "selectCategory": "Select category",
+    "results": "Search Results",
+    "resultsCount": "{count} results",
+    "noResults": "No results found",
+    "noResultsDescription": "Try adjusting your search terms or use advanced search",
+    "filters": "Filters",
+    "sortBy": "Sort by",
+    "relevance": "Relevance",
+    "dateNewest": "Date (Newest)",
+    "dateOldest": "Date (Oldest)",
+    "titleAZ": "Title (A-Z)",
+    "titleZA": "Title (Z-A)",
+    "advancedFields": {
+      "keyword": "Keywords",
+      "title": "Title",
+      "author": "Author",
+      "subject": "Subject",
+      "dateFrom": "Date From",
+      "dateTo": "Date To",
+      "abstract": "Abstract",
+      "identifier": "Identifier (Handle/DOI)",
+      "type": "Type",
+      "language": "Language",
+      "publisher": "Publisher",
+      "searchButton": "Search",
+      "clearButton": "Clear All",
+      "anyField": "Any field",
+      "addField": "Add Field",
+      "removeField": "Remove",
+      "booleanOperator": "Boolean Operator",
+      "and": "AND",
+      "or": "OR",
+      "not": "NOT"
+    },
+    "searchMode": {
+      "label": "Search Mode",
+      "contains": "Contains",
+      "startsWith": "Starts with",
+      "exact": "Exact match"
+    },
+    "categories": {
+      "all": "All",
+      "general": "General",
+      "title": "Title",
+      "author": "Author",
+      "subject": "Subject",
+      "publisher": "Publisher",
+      "date": "Date"
+    },
+    "filterBy": {
+      "author": "Author",
+      "subject": "Subject",
+      "date": "Date",
+      "type": "Type",
+      "community": "Community",
+      "collection": "Collection"
+    }
+  },
+  "browse": {
+    "title": "Browse Repository",
+    "communities": "Communities",
+    "collections": "Collections",
+    "items": "Items",
+    "byAuthor": "Browse by Author",
+    "bySubject": "Browse by Subject",
+    "byDate": "Browse by Date",
+    "byType": "Browse by Type",
+    "byPublisher": "Browse by Publisher"
+  },
+  "community": {
+    "title": "Community",
+    "collections": "Collections",
+    "subcommunities": "Sub-communities",
+    "items": "Items",
+    "description": "Description"
+  },
+  "collection": {
+    "title": "Collection",
+    "items": "Items",
+    "description": "Description",
+    "recentItems": "Recent Items"
+  },
+  "item": {
+    "title": "Item Details",
+    "metadata": "Metadata",
+    "files": "Files",
+    "download": "Download",
+    "preview": "Preview",
+    "openPdf": "Open PDF",
+    "closePdf": "Close Preview",
+    "citation": "Citation",
+    "copyCitation": "Copy Citation",
+    "share": "Share",
+    "copyLink": "Copy Link",
+    "relatedItems": "Related Items",
+    "persistentIdentifiers": "Permanent Link",
+    "handle": "Handle",
+    "doiLabel": "DOI",
+    "viewer": {
+      "zoomIn": "Zoom In",
+      "zoomOut": "Zoom Out",
+      "fullscreen": "Fullscreen",
+      "exitFullscreen": "Exit Fullscreen",
+      "loadError": "Failed to load file",
+      "prevPage": "Previous Page",
+      "nextPage": "Next Page"
+    },
+    "fields": {
+      "title": "Title",
+      "author": "Author",
+      "date": "Date",
+      "type": "Type",
+      "subject": "Subjects",
+      "abstract": "Abstract",
+      "language": "Language",
+      "publisher": "Publisher",
+      "identifier": "Identifier",
+      "rights": "Rights"
+    }
+  },
+  "about": {
+    "title": "About the Digital Repository",
+    "mission": "Our Mission",
+    "vision": "Our Vision",
+    "goals": "Our Goals",
+    "policies": "Policies",
+    "contact": "Contact Us"
+  },
+  "footer": {
+    "title": "Digital Repository",
+    "subtitle": "King Fahd National Library",
+    "description": "The institutional digital repository of King Fahd National Library, providing open access to Saudi and Arabic intellectual output.",
+    "quickLinks": "Quick Links",
+    "help": "Help & Support",
+    "userGuide": "User Guide",
+    "faq": "FAQ",
+    "policies": "Policies & Guidelines",
+    "accessibilty": "Accessibility",
+    "contactUs": "Contact Us",
+    "address": "King Fahd Road, Olaya District, Riyadh, Saudi Arabia",
+    "copyright": "© {year} King Fahd National Library. All rights reserved.",
+    "privacy": "Privacy Policy",
+    "terms": "Terms & Conditions"
+  },
+  "common": {
+    "close": "Close",
+    "loading": "Loading...",
+    "fullscreen": "Fullscreen",
+    "items": "items",
+    "retry": "Retry",
+    "error": "An error occurred",
+    "noData": "No data available"
+  },
+  "pagination": {
+    "first": "First",
+    "last": "Last",
+    "next": "Next",
+    "previous": "Previous",
+    "page": "Page",
+    "of": "of",
+    "showing": "Showing",
+    "to": "to",
+    "results": "results"
+  },
+  "accessibility": {
+    "skipToContent": "Skip to main content",
+    "mainNavigation": "Main Navigation",
+    "searchForm": "Search Form",
+    "breadcrumb": "Breadcrumb"
+  },
+  "errors": {
+    "404": {
+      "title": "Page Not Found",
+      "description": "Sorry, the page you're looking for doesn't exist or has been moved.",
+      "backHome": "Back to Home"
+    },
+    "500": {
+      "title": "Server Error",
+      "description": "Sorry, a server error occurred. Please try again later."
+    },
+    "network": {
+      "title": "Connection Error",
+      "description": "Could not connect to the server. Please check your internet connection."
+    }
+  },
+  "cookies": {
+    "title": "We use cookies",
+    "description": "We use cookies to improve your experience and analyze site usage.",
+    "acceptAll": "Accept All",
+    "acceptNecessary": "Necessary Only"
+  },
+  "sitemap": {
+    "title": "Site Map",
+    "heroTitle": "Interactive Digital Repository Map",
+    "heroDescription": "Explore the repository structure, user journey, and UX recommendations for King Fahd National Library",
+    "tabs": {
+      "architecture": "Information Architecture",
+      "journey": "User Journey",
+      "ux": "UX Recommendations"
+    },
+    "exportTitle": "Export Map",
+    "exportDescription": "Print this map or export it as a PDF document",
+    "print": "Print",
+    "iaMap": {
+      "title": "Information Architecture Map",
+      "description": "A comprehensive view of content organization and digital services in the repository",
+      "userTypes": "User Types",
+      "users": {
+        "researcher": "Academic Researchers",
+        "student": "Students",
+        "staff": "Library Staff",
+        "public": "General Public",
+        "publisher": "Publishers & Depositors"
+      },
+      "mainSections": "Main Sections",
+      "sections": {
+        "home": "Home",
+        "search": "Search",
+        "browse": "Browse",
+        "collections": "Collections",
+        "legalDeposit": "Legal Deposit",
+        "stats": "Statistics",
+        "about": "About"
+      },
+      "subsections": {
+        "results": "Results",
+        "advanced": "Advanced Search",
+        "bySubject": "By Subject",
+        "byAuthor": "By Author",
+        "byYear": "By Year",
+        "byType": "By Type",
+        "byLanguage": "By Language",
+        "books": "Books",
+        "periodicals": "Periodicals",
+        "theses": "Theses",
+        "manuscripts": "Manuscripts",
+        "newspapers": "Newspapers",
+        "maps": "Maps",
+        "media": "Media",
+        "submission": "Submit Deposit",
+        "tracking": "Track Requests",
+        "guidelines": "Guidelines",
+        "views": "Views",
+        "downloads": "Downloads",
+        "reports": "Reports",
+        "mission": "Mission",
+        "policies": "Policies",
+        "contact": "Contact Us",
+        "help": "Help"
+      },
+      "itemPage": "Digital Item Page",
+      "itemComponents": {
+        "metadata": "Metadata",
+        "preview": "Preview",
+        "download": "Download",
+        "stats": "Statistics",
+        "identifiers": "Persistent Identifiers",
+        "citation": "Citation",
+        "related": "Related Items"
+      },
+      "previewTypes": "Preview Types",
+      "digitalCollections": "Digital Collections",
+      "collections": {
+        "books": "Books",
+        "periodicals": "Periodicals",
+        "theses": "Theses",
+        "manuscripts": "Manuscripts",
+        "newspapers": "Newspapers",
+        "maps": "Maps",
+        "media": "Images & Media"
+      }
+    },
+    "journey": {
+      "title": "User Journey Map",
+      "description": "Track the user path from entry to task completion",
+      "selectFlow": "Select User Flow",
+      "flows": {
+        "researcherFlow": "Researcher Flow",
+        "researcherDesc": "Researchers start with advanced search or browsing, then review results and examine items in detail before downloading or citing",
+        "studentFlow": "Student Flow",
+        "studentDesc": "Students focus on quick search and direct content access for study and research",
+        "publisherFlow": "Publisher Flow",
+        "publisherDesc": "Publishers submit legal deposits and track their request status"
+      },
+      "stages": "Journey Stages",
+      "stageNames": {
+        "entry": "Entry",
+        "discovery": "Discovery",
+        "results": "Results",
+        "itemView": "Item View",
+        "action": "Action",
+        "exit": "Exit"
+      },
+      "actions": {
+        "directUrl": "Direct URL",
+        "searchEngine": "Search Engine",
+        "socialMedia": "Social Media",
+        "referral": "Referral",
+        "simpleSearch": "Simple Search",
+        "advancedSearch": "Advanced Search",
+        "browse": "Browse",
+        "filters": "Filters",
+        "viewResults": "View Results",
+        "sortResults": "Sort",
+        "filterResults": "Filter",
+        "paginate": "Paginate",
+        "viewMetadata": "View Metadata",
+        "previewFile": "Preview File",
+        "viewStats": "View Stats",
+        "checkIdentifiers": "Identifiers",
+        "download": "Download",
+        "cite": "Cite",
+        "share": "Share",
+        "viewRelated": "Related Items",
+        "saveSearch": "Save Search",
+        "bookmark": "Bookmark",
+        "subscribe": "Subscribe",
+        "feedback": "Feedback"
+      },
+      "touchpoints": "Touchpoints",
+      "touchpointNames": {
+        "hover": "Hover",
+        "click": "Click",
+        "filter": "Filter",
+        "scroll": "Scroll"
+      },
+      "touchpointDescs": {
+        "hoverDesc": "Display additional information on mouse hover",
+        "clickDesc": "Interact with elements and links",
+        "filterDesc": "Narrow results using filters",
+        "scrollDesc": "Browse long content"
+      },
+      "flowVisualization": "Flow Visualization",
+      "directBrowse": "Direct Browse",
+      "refineSearch": "Refine Search"
+    },
+    "ux": {
+      "title": "User Experience Recommendations",
+      "description": "Guidelines and standards for improving user experience in the digital repository",
+      "categories": {
+        "accessibility": "Accessibility",
+        "performance": "Performance",
+        "navigation": "Navigation",
+        "responsiveness": "Responsiveness",
+        "bilingual": "Bilingual Support",
+        "sustainability": "Digital Sustainability"
+      },
+      "priority": {
+        "high": "High Priority",
+        "medium": "Medium Priority",
+        "low": "Low Priority"
+      },
+      "items": {
+        "wcag": "WCAG 2.1 Compliance",
+        "screenReader": "Screen Reader Support",
+        "keyboardNav": "Keyboard Navigation",
+        "colorContrast": "Proper Color Contrast",
+        "focusIndicators": "Clear Focus Indicators",
+        "lazyLoading": "Lazy Loading for Images",
+        "caching": "Smart Caching",
+        "compression": "File Compression",
+        "cdnUsage": "CDN Usage",
+        "codeOptimization": "Code Optimization",
+        "breadcrumbs": "Clear Breadcrumbs",
+        "searchSuggestions": "Search Suggestions",
+        "facetedSearch": "Faceted Search",
+        "relatedContent": "Related Content",
+        "clearCTA": "Clear Call-to-Action Buttons",
+        "mobileFirst": "Mobile-First Design",
+        "touchFriendly": "Touch Support",
+        "adaptiveImages": "Adaptive Images",
+        "responsiveTypography": "Responsive Typography",
+        "flexibleGrids": "Flexible Grids",
+        "rtlSupport": "RTL Direction Support",
+        "languageSwitch": "Seamless Language Switch",
+        "culturalAdaptation": "Cultural Adaptation",
+        "contentParity": "Content Parity",
+        "dynamicDirection": "Dynamic Direction",
+        "persistentIds": "Persistent Identifiers",
+        "metadataStandards": "Metadata Standards",
+        "preservation": "Digital Preservation",
+        "interoperability": "Interoperability",
+        "versionControl": "Version Control"
+      },
+      "summary": "Standards Summary",
+      "compatible": "Compatible",
+      "bilingualSupport": "Bilingual Support",
+      "accessibilityLevel": "Accessibility Level",
+      "responsiveDesign": "Responsive Design",
+      "keyPrinciples": "Key Principles",
+      "principles": {
+        "userCentric": "User-Centric",
+        "userCentricDesc": "Design that puts user needs first",
+        "accessible": "Accessible",
+        "accessibleDesc": "Ensuring all users can access content",
+        "sustainable": "Sustainable",
+        "sustainableDesc": "Scalable and maintainable long-term solutions",
+        "institutional": "Institutional Identity",
+        "institutionalDesc": "Enhancing King Fahd National Library's identity"
+      }
+    }
+  }
+}

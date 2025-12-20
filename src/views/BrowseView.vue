@@ -9,7 +9,7 @@ import { browse, items as itemsApi, utils } from '@/services/dspace'
 
 const route = useRoute()
 const router = useRouter()
-const { t } = useI18n()
+const { t, locale } = useI18n()
 
 const browseType = ref('author')
 const entries = ref([])
@@ -22,20 +22,21 @@ const searchQuery = ref('')
 const viewMode = ref('entries') // 'entries' or 'results'
 const selectedSort = ref('count_desc')
 
-const sortOptions = [
-  { value: 'name_asc', label: 'الاسم (أ-ي)' },
-  { value: 'name_desc', label: 'الاسم (ي-أ)' },
-  { value: 'count_desc', label: 'الأكثر عناصر' },
-  { value: 'count_asc', label: 'الأقل عناصر' }
-]
+const sortOptions = computed(() => [
+  { value: 'name_asc', label: locale.value === 'ar' ? 'الاسم (أ-ي)' : 'Name (A-Z)' },
+  { value: 'name_desc', label: locale.value === 'ar' ? 'الاسم (ي-أ)' : 'Name (Z-A)' },
+  { value: 'count_desc', label: locale.value === 'ar' ? 'الأكثر عناصر' : 'Most items' },
+  { value: 'count_asc', label: locale.value === 'ar' ? 'الأقل عناصر' : 'Least items' }
+])
 
-const browseTypes = [
-  { id: 'author', label: t('browse.byAuthor'), icon: 'users', description: 'تصفح حسب المؤلفين' },
-  { id: 'subject', label: t('browse.bySubject'), icon: 'tag', description: 'تصفح حسب الموضوعات' },
-  { id: 'dateissued', label: t('browse.byDate'), icon: 'calendar', description: 'تصفح حسب التاريخ' },
-  { id: 'type', label: t('browse.byType'), icon: 'layers', description: 'تصفح حسب النوع' },
-  { id: 'publisher', label: t('browse.byPublisher'), icon: 'building', description: 'تصفح حسب الناشرين' }
-]
+// Browse types - static list
+const browseTypes = computed(() => [
+  { id: 'author', label: t('browse.byAuthor'), icon: 'users', description: locale.value === 'ar' ? 'تصفح حسب المؤلفين' : 'Browse by authors' },
+  { id: 'subject', label: t('browse.bySubject'), icon: 'tag', description: locale.value === 'ar' ? 'تصفح حسب الموضوعات' : 'Browse by subjects' },
+  { id: 'dateissued', label: t('browse.byDate'), icon: 'calendar', description: locale.value === 'ar' ? 'تصفح حسب التاريخ' : 'Browse by date' },
+  { id: 'type', label: t('browse.byType'), icon: 'layers', description: locale.value === 'ar' ? 'تصفح حسب النوع' : 'Browse by type' },
+  { id: 'publisher', label: t('browse.byPublisher'), icon: 'building', description: locale.value === 'ar' ? 'تصفح حسب الناشرين' : 'Browse by publishers' }
+])
 
 const icons = {
   'users': 'M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2 M9 7a4 4 0 100 8 4 4 0 000-8z M23 21v-2a4 4 0 00-3-3.87 M16 3.13a4 4 0 010 7.75',
@@ -46,7 +47,7 @@ const icons = {
 }
 
 const currentBrowseType = computed(() => {
-  return browseTypes.find(t => t.id === browseType.value) || browseTypes[0]
+  return browseTypes.value.find(t => t.id === browseType.value) || browseTypes.value[0]
 })
 
 const breadcrumbItems = computed(() => [
@@ -55,6 +56,19 @@ const breadcrumbItems = computed(() => [
 ])
 
 const errorMessage = ref('')
+const availableIndices = ref([])
+
+// Fetch available browse indices from server
+async function loadAvailableIndices() {
+  try {
+    const response = await browse.getIndices()
+    const indices = response?._embedded?.browses || []
+    availableIndices.value = indices.map(idx => idx.id)
+    console.log('Server available browse indices:', availableIndices.value)
+  } catch (error) {
+    console.error('Failed to load browse indices:', error)
+  }
+}
 
 async function loadEntries() {
   isLoading.value = true
@@ -62,19 +76,54 @@ async function loadEntries() {
   errorMessage.value = ''
 
   try {
+    console.log('Loading browse entries for:', browseType.value)
+
+    // Log server indices for debugging
+    if (availableIndices.value.length === 0) {
+      await loadAvailableIndices()
+    }
+
     const response = await browse.byIndex(browseType.value, {
       page: currentPage.value - 1,
       size: 20
     })
-    entries.value = response._embedded?.entries || []
+    console.log('Browse response:', response)
+
+    // Handle different response formats
+    let entriesData = []
+    if (response._embedded?.entries) {
+      entriesData = response._embedded.entries
+    } else if (response._embedded?.browseIndexEntries) {
+      entriesData = response._embedded.browseIndexEntries
+    } else if (response._embedded?.values) {
+      // Some DSpace versions return values instead of entries
+      entriesData = response._embedded.values.map(v => ({
+        value: v.value || v.label || v,
+        count: v.count || v.frequency || 0
+      }))
+    } else if (response.entries) {
+      entriesData = response.entries
+    } else if (Array.isArray(response)) {
+      entriesData = response
+    }
+
+    // Ensure entries have value and count properties
+    entries.value = entriesData.map(entry => ({
+      value: entry.value || entry.label || entry.authority || entry,
+      count: entry.count || entry.frequency || entry.numberOfResults || 0
+    }))
+
     totalPages.value = response.page?.totalPages || 1
-    totalResults.value = response.page?.totalElements || 0
+    totalResults.value = response.page?.totalElements || entriesData.length || 0
+    console.log('Loaded entries:', entries.value.length)
   } catch (error) {
     console.error('Failed to load browse entries:', error)
     entries.value = []
     totalPages.value = 1
     totalResults.value = 0
-    errorMessage.value = 'فشل تحميل البيانات. يرجى المحاولة مرة أخرى.'
+    errorMessage.value = locale.value === 'ar'
+      ? 'فشل تحميل البيانات. قد لا يكون هذا النوع من التصفح متاحًا.'
+      : 'Failed to load data. This browse type may not be available.'
   } finally {
     isLoading.value = false
     // Apply initial sort if we have entries
@@ -91,42 +140,58 @@ async function loadItems(filterValue) {
   errorMessage.value = ''
 
   try {
-    const response = await itemsApi.search(filterValue, {
+    console.log('Loading items for filter:', filterValue, 'browseType:', browseType.value)
+
+    // Use browse API to get items by entry value
+    const response = await browse.getItemsByEntry(browseType.value, filterValue, {
       page: currentPage.value - 1,
       size: 12
     })
+    console.log('Browse items response:', response)
 
-    if (response._embedded?.searchResult?._embedded?.objects) {
-      searchResults.value = response._embedded.searchResult._embedded.objects
-        .map(obj => {
-          const item = obj._embedded?.indexableObject
-          if (!item) return null
+    // Handle different response formats from browse/search APIs
+    let itemsData = []
 
-          // Get thumbnail URL - check multiple sources
-          let thumbnailUrl = null
-          if (item._embedded?.thumbnail?._links?.content?.href) {
-            thumbnailUrl = item._embedded.thumbnail._links.content.href
-          } else if (item._links?.thumbnail?.href) {
-            thumbnailUrl = item._links.thumbnail.href
-          } else if (obj._embedded?.thumbnail?._links?.content?.href) {
-            thumbnailUrl = obj._embedded.thumbnail._links.content.href
-          } else if (obj._links?.thumbnail?.href) {
-            thumbnailUrl = obj._links.thumbnail.href
-          }
+    // Format 1: Browse items API format
+    if (response._embedded?.items) {
+      itemsData = response._embedded.items
+    }
+    // Format 2: Search result format
+    else if (response._embedded?.searchResult?._embedded?.objects) {
+      itemsData = response._embedded.searchResult._embedded.objects.map(obj => obj._embedded?.indexableObject).filter(Boolean)
+    }
+    // Format 3: Direct objects array
+    else if (response._embedded?.objects) {
+      itemsData = response._embedded.objects.map(obj => obj._embedded?.indexableObject || obj).filter(Boolean)
+    }
 
-          return {
-            id: item.uuid,
-            title: utils.getMetadataValue(item.metadata, 'dc.title') || 'بدون عنوان',
-            author: utils.getMetadataValue(item.metadata, 'dc.contributor.author') || 'غير معروف',
-            date: utils.getMetadataValue(item.metadata, 'dc.date.issued') || '',
-            type: utils.getMetadataValue(item.metadata, 'dc.type') || '',
-            collection: '',
-            thumbnail: thumbnailUrl
-          }
-        })
-        .filter(Boolean)
-      totalResults.value = response._embedded?.searchResult?.page?.totalElements || 0
-      totalPages.value = Math.ceil(totalResults.value / 12)
+    console.log('Parsed items data:', itemsData.length, 'items')
+
+    if (itemsData.length > 0) {
+      searchResults.value = itemsData.map(item => {
+        if (!item) return null
+
+        // Get thumbnail URL - check multiple sources
+        let thumbnailUrl = null
+        if (item._embedded?.thumbnail?._links?.content?.href) {
+          thumbnailUrl = item._embedded.thumbnail._links.content.href
+        } else if (item._links?.thumbnail?.href) {
+          thumbnailUrl = item._links.thumbnail.href
+        }
+
+        return {
+          id: item.uuid || item.id,
+          title: utils.getMetadataValue(item.metadata, 'dc.title') || item.name || 'بدون عنوان',
+          author: utils.getMetadataValue(item.metadata, 'dc.contributor.author') || 'غير معروف',
+          date: utils.getMetadataValue(item.metadata, 'dc.date.issued') || '',
+          type: utils.getMetadataValue(item.metadata, 'dc.type') || '',
+          collection: '',
+          thumbnail: thumbnailUrl
+        }
+      }).filter(Boolean)
+
+      totalResults.value = response.page?.totalElements || itemsData.length
+      totalPages.value = response.page?.totalPages || Math.ceil(totalResults.value / 12)
     } else {
       searchResults.value = []
       totalResults.value = 0
@@ -137,7 +202,9 @@ async function loadItems(filterValue) {
     searchResults.value = []
     totalResults.value = 0
     totalPages.value = 1
-    errorMessage.value = 'فشل تحميل العناصر. يرجى المحاولة مرة أخرى.'
+    errorMessage.value = locale.value === 'ar'
+      ? 'فشل تحميل العناصر. يرجى المحاولة مرة أخرى.'
+      : 'Failed to load items. Please try again.'
   } finally {
     isLoading.value = false
   }
@@ -206,7 +273,10 @@ function handleSortChange(event) {
   entries.value = sorted
 }
 
-onMounted(() => {
+onMounted(async () => {
+  // First load available indices from server for debugging
+  await loadAvailableIndices()
+
   if (route.query.type) {
     browseType.value = route.query.type
   }
@@ -243,7 +313,7 @@ watch(() => route.query, (newQuery) => {
       <div class="container">
         <div class="header-content">
           <h1 class="page-title">{{ $t('browse.title') }}</h1>
-          <p class="page-description">استكشف محتويات المكتبة الرقمية</p>
+          <p class="page-description">{{ locale === 'ar' ? 'استكشف محتويات المكتبة الرقمية' : 'Explore digital library contents' }}</p>
         </div>
 
         <!-- Browse Type Tabs -->
@@ -278,7 +348,7 @@ watch(() => route.query, (newQuery) => {
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <polyline points="15 18 9 12 15 6"/>
               </svg>
-              العودة للقائمة
+              {{ locale === 'ar' ? 'العودة للقائمة' : 'Back to list' }}
             </button>
 
             <div class="results-info">
@@ -286,7 +356,7 @@ watch(() => route.query, (newQuery) => {
                 {{ totalResults }} {{ currentBrowseType.label }}
               </span>
               <span v-else class="results-count">
-                <strong>{{ searchQuery }}</strong> - {{ totalResults }} نتيجة
+                <strong>{{ searchQuery }}</strong> - {{ totalResults }} {{ locale === 'ar' ? 'نتيجة' : 'results' }}
               </span>
             </div>
           </div>
@@ -294,7 +364,7 @@ watch(() => route.query, (newQuery) => {
           <div class="controls-end">
             <!-- Sort (only for entries view) -->
             <div v-if="viewMode === 'entries'" class="sort-wrapper">
-              <label for="sort-select">ترتيب:</label>
+              <label for="sort-select">{{ locale === 'ar' ? 'ترتيب:' : 'Sort:' }}</label>
               <select id="sort-select" class="sort-select" :value="selectedSort" @change="handleSortChange">
                 <option v-for="option in sortOptions" :key="option.value" :value="option.value">
                   {{ option.label }}
@@ -319,10 +389,10 @@ watch(() => route.query, (newQuery) => {
               <line x1="12" y1="16" x2="12.01" y2="16"/>
             </svg>
           </div>
-          <h3>حدث خطأ</h3>
+          <h3>{{ locale === 'ar' ? 'حدث خطأ' : 'An error occurred' }}</h3>
           <p>{{ errorMessage }}</p>
           <button class="btn btn-primary" @click="viewMode === 'entries' ? loadEntries() : loadItems(searchQuery)">
-            إعادة المحاولة
+            {{ locale === 'ar' ? 'إعادة المحاولة' : 'Try again' }}
           </button>
         </div>
 
@@ -334,8 +404,8 @@ watch(() => route.query, (newQuery) => {
               <polyline points="14 2 14 8 20 8"/>
             </svg>
           </div>
-          <h3>لا توجد بيانات</h3>
-          <p>لم يتم العثور على {{ currentBrowseType.label }} في هذا التصنيف</p>
+          <h3>{{ locale === 'ar' ? 'لا توجد بيانات' : 'No data found' }}</h3>
+          <p>{{ locale === 'ar' ? 'لم يتم العثور على ' + currentBrowseType.label + ' في هذا التصنيف' : 'No ' + currentBrowseType.label + ' found in this category' }}</p>
         </div>
 
         <!-- Entries View -->
@@ -349,15 +419,15 @@ watch(() => route.query, (newQuery) => {
             >
               <div class="entry-content">
                 <span class="entry-value">{{ entry.value }}</span>
-                <span class="entry-description" v-if="browseType === 'author'">مؤلف</span>
-                <span class="entry-description" v-else-if="browseType === 'subject'">موضوع</span>
-                <span class="entry-description" v-else-if="browseType === 'dateissued'">سنة النشر</span>
-                <span class="entry-description" v-else-if="browseType === 'type'">نوع المحتوى</span>
-                <span class="entry-description" v-else-if="browseType === 'publisher'">ناشر</span>
+                <span class="entry-description" v-if="browseType === 'author'">{{ locale === 'ar' ? 'مؤلف' : 'Author' }}</span>
+                <span class="entry-description" v-else-if="browseType === 'subject'">{{ locale === 'ar' ? 'موضوع' : 'Subject' }}</span>
+                <span class="entry-description" v-else-if="browseType === 'dateissued'">{{ locale === 'ar' ? 'سنة النشر' : 'Year' }}</span>
+                <span class="entry-description" v-else-if="browseType === 'type'">{{ locale === 'ar' ? 'نوع المحتوى' : 'Type' }}</span>
+                <span class="entry-description" v-else-if="browseType === 'publisher'">{{ locale === 'ar' ? 'ناشر' : 'Publisher' }}</span>
               </div>
               <div class="entry-count-wrapper">
                 <span class="entry-count">{{ formatCount(entry.count) }}</span>
-                <span class="count-label">عنصر</span>
+                <span class="count-label">{{ locale === 'ar' ? 'عنصر' : 'items' }}</span>
               </div>
               <div class="entry-arrow">
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -378,9 +448,9 @@ watch(() => route.query, (newQuery) => {
                 <line x1="8" y1="11" x2="14" y2="11"/>
               </svg>
             </div>
-            <h3>لا توجد نتائج</h3>
-            <p>لم يتم العثور على عناصر مطابقة لـ "{{ searchQuery }}"</p>
-            <button class="btn btn-primary" @click="backToEntries">العودة للتصفح</button>
+            <h3>{{ locale === 'ar' ? 'لا توجد نتائج' : 'No results found' }}</h3>
+            <p>{{ locale === 'ar' ? 'لم يتم العثور على عناصر مطابقة لـ "' + searchQuery + '"' : 'No items matching "' + searchQuery + '" were found' }}</p>
+            <button class="btn btn-primary" @click="backToEntries">{{ locale === 'ar' ? 'العودة للتصفح' : 'Back to browse' }}</button>
           </div>
 
           <div v-else class="results-grid">

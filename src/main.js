@@ -2,7 +2,7 @@ import { createApp } from 'vue'
 import { createPinia } from 'pinia'
 import App from './App.vue'
 import router from './router'
-import i18n from './locales'
+import i18n, { initializeTranslations, setLocale } from './locales'
 import { auth } from './services/api'
 import { debugLog } from './utils/security'
 
@@ -31,6 +31,25 @@ auth.autoLogin().then(success => {
   }
 })
 
-// Mount the app
-app.mount('#app')
+// Initialize translations from external files, then mount the app
+initializeTranslations().then(async () => {
+  debugLog.log('Translations loaded')
+
+  // Load saved locale preference from localStorage
+  const savedLocale = localStorage.getItem('locale')
+  if (savedLocale && ['ar', 'en'].includes(savedLocale)) {
+    await setLocale(savedLocale)
+    debugLog.log('Restored saved locale:', savedLocale)
+  } else {
+    // Default to Arabic if no saved preference
+    await setLocale('ar')
+  }
+
+  debugLog.log('Mounting app')
+  app.mount('#app')
+}).catch(error => {
+  debugLog.error('Failed to load translations:', error)
+  // Mount anyway with fallback/empty translations
+  app.mount('#app')
+})
 // Build timestamp: 1765703040

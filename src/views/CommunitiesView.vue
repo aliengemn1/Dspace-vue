@@ -4,63 +4,54 @@ import { useI18n } from 'vue-i18n'
 import Breadcrumb from '@/components/common/Breadcrumb.vue'
 import { communities } from '@/services/dspace'
 
-const { t } = useI18n()
+const { t, locale } = useI18n()
 
 const communityList = ref([])
 const isLoading = ref(true)
+
+const error = ref(null)
 
 const breadcrumbItems = computed(() => [
   { label: t('nav.home'), path: '/' },
   { label: t('nav.communities'), path: null }
 ])
 
-// Mock data
-const mockCommunities = [
-  {
-    id: '1',
-    name: 'الرسائل العلمية',
-    description: 'رسائل الماجستير والدكتوراه من مختلف الجامعات السعودية',
-    itemCount: 60000,
-    collectionCount: 45
-  },
-  {
-    id: '2',
-    name: 'المخطوطات والوثائق',
-    description: 'مخطوطات عربية وإسلامية نادرة ووثائق تاريخية',
-    itemCount: 5000,
-    collectionCount: 12
-  },
-  {
-    id: '3',
-    name: 'الدوريات والصحف',
-    description: 'أرشيف الصحف والمجلات السعودية والعربية',
-    itemCount: 300000,
-    collectionCount: 28
-  },
-  {
-    id: '4',
-    name: 'إصدارات المكتبة',
-    description: 'الإصدارات والبحوث المنشورة من قبل مكتبة الملك فهد الوطنية',
-    itemCount: 450,
-    collectionCount: 8
-  },
-  {
-    id: '5',
-    name: 'الوسائط المتعددة',
-    description: 'تسجيلات صوتية ومرئية وصور تاريخية',
-    itemCount: 17500,
-    collectionCount: 15
-  }
-]
-
 async function loadCommunities() {
   isLoading.value = true
 
   try {
     const response = await communities.getTopLevel()
-    communityList.value = response._embedded?.communities || []
-  } catch (error) {
-    communityList.value = mockCommunities
+    const communitiesData = response._embedded?.communities || []
+
+    // Map community data with proper field names from DSpace API
+    communityList.value = communitiesData.map(community => ({
+      id: community.uuid || community.id,
+      name: community.name || '',
+      description: community.metadata?.['dc.description']?.[0]?.value || '',
+      // DSpace 7 uses archivedItemsCount for item count
+      itemCount: community.archivedItemsCount || 0,
+      // Collection count will be fetched separately
+      collectionCount: 0
+    }))
+
+    console.log('Loaded communities:', communityList.value)
+
+    // Fetch collection counts for each community in parallel
+    await Promise.all(communityList.value.map(async (community) => {
+      try {
+        const collectionsResponse = await communities.getCollections(community.id, { size: 1 })
+        // Get total count from page info
+        community.collectionCount = collectionsResponse.page?.totalElements || 0
+      } catch (err) {
+        console.error('Error loading collections for community:', community.id, err)
+        community.collectionCount = 0
+      }
+    }))
+
+    console.log('Communities with collection counts:', communityList.value)
+  } catch (err) {
+    console.error('Error loading communities:', err)
+    error.value = err.message || t('common.error')
   } finally {
     isLoading.value = false
   }
@@ -92,7 +83,7 @@ onMounted(() => {
       <div class="container">
         <h1 class="page-title">{{ $t('browse.communities') }}</h1>
         <p class="page-description">
-          استعرض مجتمعات المستودع الرقمي والوصول إلى مجموعاتها المختلفة
+          {{ locale === 'ar' ? 'استعرض مجتمعات المستودع الرقمي والوصول إلى مجموعاتها المختلفة' : 'Browse digital repository communities and access their collections' }}
         </p>
       </div>
     </div>
@@ -104,6 +95,19 @@ onMounted(() => {
         <div v-if="isLoading" class="loading-container">
           <div class="spinner"></div>
           <p>{{ $t('common.loading') }}</p>
+        </div>
+
+        <!-- Error -->
+        <div v-else-if="error" class="error-container">
+          <div class="error-icon">
+            <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+              <circle cx="12" cy="12" r="10"/>
+              <line x1="12" y1="8" x2="12" y2="12"/>
+              <line x1="12" y1="16" x2="12.01" y2="16"/>
+            </svg>
+          </div>
+          <p>{{ error }}</p>
+          <button @click="loadCommunities" class="retry-btn">{{ $t('common.retry') }}</button>
         </div>
 
         <!-- Communities Grid -->
@@ -191,6 +195,26 @@ onMounted(() => {
   @include flex-column-center;
   padding: $spacing-12;
   gap: $spacing-4;
+}
+
+.error-container {
+  @include flex-column-center;
+  padding: $spacing-12;
+  gap: $spacing-4;
+  text-align: center;
+
+  .error-icon {
+    color: $text-light;
+  }
+
+  p {
+    color: $text-muted;
+  }
+
+  .retry-btn {
+    @include button-primary;
+    margin-top: $spacing-4;
+  }
 }
 
 .communities-grid {

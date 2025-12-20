@@ -1,9 +1,9 @@
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { sanitizeSearchQuery } from '@/utils/security'
 
-const { t } = useI18n()
+const { t, locale } = useI18n()
 
 const props = defineProps({
   placeholder: {
@@ -29,6 +29,10 @@ const props = defineProps({
   showCategories: {
     type: Boolean,
     default: false
+  },
+  showVoiceSearch: {
+    type: Boolean,
+    default: false
   }
 })
 
@@ -38,6 +42,11 @@ const searchInput = ref(null)
 const query = ref(props.modelValue)
 const selectedCategory = ref('general')
 const isCategoryOpen = ref(false)
+
+// Voice search
+const isListening = ref(false)
+const speechSupported = ref(false)
+let recognition = null
 
 // Search categories - DSpace facet-based search options
 const categories = computed(() => [
@@ -100,11 +109,71 @@ function closeCategoryDropdown(event) {
   }
 }
 
+// Voice search functions
+function toggleVoiceInput() {
+  if (isListening.value) {
+    stopVoiceInput()
+  } else {
+    startVoiceInput()
+  }
+}
+
+function startVoiceInput() {
+  if (!speechSupported.value) return
+
+  const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition
+  recognition = new SpeechRecognition()
+
+  recognition.lang = locale.value === 'ar' ? 'ar-SA' : 'en-US'
+  recognition.continuous = false
+  recognition.interimResults = false
+
+  recognition.onstart = () => {
+    isListening.value = true
+  }
+
+  recognition.onresult = (event) => {
+    const transcript = event.results[0][0].transcript
+    query.value = transcript
+    emit('update:modelValue', transcript)
+    // Auto-submit after voice input
+    setTimeout(() => handleSubmit(), 300)
+  }
+
+  recognition.onerror = (event) => {
+    console.error('Speech recognition error:', event.error)
+    isListening.value = false
+  }
+
+  recognition.onend = () => {
+    isListening.value = false
+  }
+
+  recognition.start()
+}
+
+function stopVoiceInput() {
+  if (recognition) {
+    recognition.stop()
+  }
+  isListening.value = false
+}
+
 onMounted(() => {
+  // Check speech recognition support
+  speechSupported.value = 'webkitSpeechRecognition' in window || 'SpeechRecognition' in window
+
   if (props.autofocus && searchInput.value) {
     searchInput.value.focus()
   }
   document.addEventListener('click', closeCategoryDropdown)
+})
+
+onUnmounted(() => {
+  if (recognition) {
+    recognition.stop()
+  }
+  document.removeEventListener('click', closeCategoryDropdown)
 })
 </script>
 
@@ -157,6 +226,23 @@ onMounted(() => {
         @keydown="handleKeydown"
         :aria-label="placeholder"
       />
+      <!-- Voice Search Button -->
+      <button
+        v-if="speechSupported && showVoiceSearch"
+        type="button"
+        class="voice-btn"
+        :class="{ 'is-listening': isListening }"
+        @click="toggleVoiceInput"
+        :aria-label="isListening ? $t('search.stopListening') : $t('search.voiceSearch')"
+      >
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"></path>
+          <path d="M19 10v2a7 7 0 0 1-14 0v-2"></path>
+          <line x1="12" y1="19" x2="12" y2="23"></line>
+          <line x1="8" y1="23" x2="16" y2="23"></line>
+        </svg>
+        <span v-if="isListening" class="listening-pulse"></span>
+      </button>
       <button
         v-if="query"
         type="button"
@@ -261,6 +347,54 @@ onMounted(() => {
     -webkit-appearance: none;
     appearance: none;
   }
+}
+
+// Voice search button
+.voice-btn {
+  position: absolute;
+  inset-inline-end: 100px;
+  top: 50%;
+  transform: translateY(-50%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  background-color: $gray-100;
+  border: none;
+  border-radius: $border-radius-full;
+  color: $text-secondary;
+  cursor: pointer;
+  transition: $transition-fast;
+
+  &:hover {
+    background-color: $primary-lighter;
+    color: $primary-color;
+  }
+
+  &.is-listening {
+    background-color: #ef4444;
+    color: white;
+    animation: pulse 1s infinite;
+  }
+
+  .listening-pulse {
+    position: absolute;
+    inset: -4px;
+    border: 2px solid #ef4444;
+    border-radius: 50%;
+    animation: listeningPulse 1.5s infinite;
+  }
+}
+
+@keyframes pulse {
+  0%, 100% { transform: translateY(-50%) scale(1); }
+  50% { transform: translateY(-50%) scale(1.05); }
+}
+
+@keyframes listeningPulse {
+  0% { transform: scale(1); opacity: 1; }
+  100% { transform: scale(1.4); opacity: 0; }
 }
 
 .clear-btn {

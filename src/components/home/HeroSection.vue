@@ -115,6 +115,7 @@ onMounted(() => {
             :placeholder="$t('search.placeholder')"
             :show-advanced="true"
             :show-categories="true"
+            :show-voice-search="true"
             @search="handleSearch"
             @advanced="goToAdvancedSearch"
           />

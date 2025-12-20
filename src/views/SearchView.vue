@@ -6,7 +6,7 @@ import SearchBox from '@/components/common/SearchBox.vue'
 import ItemCard from '@/components/common/ItemCard.vue'
 import Breadcrumb from '@/components/common/Breadcrumb.vue'
 import Pagination from '@/components/common/Pagination.vue'
-import { search as searchApi, utils as dspaceUtils, collections as collectionsApi, communities as communitiesApi } from '@/services/dspace'
+import { search as searchApi, utils as dspaceUtils, collections as collectionsApi, communities as communitiesApi, cacheControl } from '@/services/dspace'
 import { debugLog } from '@/utils/security'
 
 const route = useRoute()
@@ -161,18 +161,30 @@ function getFacetLabel(facetName) {
 }
 
 // Load collections for advanced search filter
-async function loadCollections() {
+// If communityId is provided, load only collections for that community
+async function loadCollections(communityId = null) {
   try {
-    const response = await collectionsApi.getAll({ size: 100 })
+    let response
+    if (communityId) {
+      // Load collections for specific community
+      response = await communitiesApi.getCollections(communityId, { size: 100 })
+    } else {
+      // Load all collections
+      response = await collectionsApi.getAll({ size: 100 })
+    }
+
     if (response._embedded?.collections) {
       availableCollections.value = response._embedded.collections.map(c => ({
         id: c.uuid || c.id,
         name: c.name || dspaceUtils.getMetadataValue(c.metadata, 'dc.title') || 'Unnamed'
       }))
+    } else {
+      availableCollections.value = []
     }
-    debugLog.log('Loaded collections:', availableCollections.value)
+    debugLog.log('Loaded collections:', availableCollections.value.length, 'for community:', communityId || 'all')
   } catch (error) {
     debugLog.error('Failed to load collections:', error)
+    availableCollections.value = []
   }
 }
 
@@ -307,11 +319,18 @@ function applySearchMode(query, mode) {
 }
 
 async function performSearch() {
+  console.log('=== PERFORM SEARCH CALLED ===')
+
   const query = searchQuery.value.trim()
   const hasFilters = Object.keys(selectedFilters.value).length > 0
 
+  console.log('Query:', query)
+  console.log('Has filters:', hasFilters)
+  console.log('Selected filters:', JSON.stringify(selectedFilters.value))
+
   // Only return early if no query AND no filters selected
   if (!query && !hasFilters) {
+    console.log('No query and no filters - returning early')
     results.value = []
     totalResults.value = 0
     return
@@ -328,6 +347,8 @@ async function performSearch() {
         facetFilters[key] = values
       }
     })
+
+    console.log('Facet filters to send:', JSON.stringify(facetFilters))
 
     // Build query with field-specific search and search mode
     // Use '*' (all items) if no query but filters are selected
@@ -395,26 +416,39 @@ function handleSortChange(event) {
 }
 
 function toggleFilter(facetName, value) {
+  console.log('=== TOGGLE FILTER CALLED ===')
+  console.log('Facet:', facetName, 'Value:', value)
+
   // Single selection mode - selecting one value clears others in same facet
   const currentValue = selectedFilters.value[facetName]?.[0]
 
+  // Create a new object to ensure Vue reactivity triggers
+  const newFilters = { ...selectedFilters.value }
+
   if (currentValue === value) {
     // Clicking same value deselects it
-    delete selectedFilters.value[facetName]
-    debugLog.log('Filter deselected:', facetName, value)
+    delete newFilters[facetName]
+    console.log('Filter DESELECTED:', facetName, value)
   } else {
     // Select new value (replaces any previous selection in this facet)
-    selectedFilters.value[facetName] = [value]
-    debugLog.log('Filter selected:', facetName, value)
+    newFilters[facetName] = [value]
+    console.log('Filter SELECTED:', facetName, value)
   }
 
+  // Assign new object to trigger reactivity
+  selectedFilters.value = newFilters
   currentPage.value = 1
-  debugLog.log('Active filters:', JSON.stringify(selectedFilters.value))
+
+  console.log('New filters object:', JSON.stringify(selectedFilters.value))
+
+  // Clear search cache to ensure fresh results with filters
+  cacheControl.clearSearchCache()
 
   // Update URL with filter parameters (like DSpace Angular)
   updateUrlWithFilters()
 
-  // Trigger search with new filter
+  // Trigger search with new filter immediately
+  console.log('Calling performSearch...')
   performSearch()
 }
 
@@ -446,6 +480,7 @@ function updateUrlWithFilters() {
 
 function clearFilters() {
   selectedFilters.value = {}
+  cacheControl.clearSearchCache()
   updateUrlWithFilters()
   performSearch()
 }
@@ -727,6 +762,15 @@ watch(() => route.query, (newQuery, oldQuery) => {
   // Always perform search when query changes
   performSearch()
 }, { deep: true })
+
+// Watch for community selection changes to load related collections
+watch(selectedCommunity, (newCommunityId) => {
+  // Clear selected collection when community changes
+  selectedCollection.value = ''
+
+  // Load collections for the selected community, or all collections if none selected
+  loadCollections(newCommunityId || null)
+})
 </script>
 
 <template>
@@ -769,6 +813,7 @@ watch(() => route.query, (newQuery, oldQuery) => {
               :placeholder="$t('search.placeholder')"
               :show-advanced="false"
               :show-categories="true"
+              :show-voice-search="true"
               @search="handleSearch"
               @category-change="handleCategoryChange"
             />

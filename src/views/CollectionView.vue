@@ -16,53 +16,29 @@ const isLoading = ref(true)
 const currentPage = ref(1)
 const totalPages = ref(1)
 
+const error = ref(null)
+
 const breadcrumbItems = computed(() => [
   { label: t('nav.home'), path: '/' },
   { label: t('nav.collections'), path: '/communities' },
   { label: collection.value?.name || t('collection.title'), path: null }
 ])
 
-// Mock data
-const mockCollection = {
-  id: '1',
-  name: 'رسائل جامعة الملك سعود',
-  description: 'رسائل الماجستير والدكتوراه المقدمة لجامعة الملك سعود في مختلف التخصصات',
-  itemCount: 15000
-}
-
-const mockItems = [
-  {
-    id: 1,
-    title: 'أثر استخدام تقنيات الذكاء الاصطناعي في تطوير خدمات المكتبات',
-    author: 'أحمد محمد السعيد',
-    date: '2024',
-    type: 'رسالة ماجستير',
-    collection: 'رسائل جامعة الملك سعود'
-  },
-  {
-    id: 2,
-    title: 'تقييم جودة الخدمات المكتبية في المكتبات الجامعية السعودية',
-    author: 'سارة عبدالله الحمد',
-    date: '2024',
-    type: 'رسالة دكتوراه',
-    collection: 'رسائل جامعة الملك سعود'
-  },
-  {
-    id: 3,
-    title: 'دور المكتبات الرقمية في دعم التعلم عن بعد',
-    author: 'محمد علي الشهري',
-    date: '2023',
-    type: 'رسالة ماجستير',
-    collection: 'رسائل جامعة الملك سعود'
-  }
-]
-
 async function loadCollection() {
   isLoading.value = true
 
   try {
     const collectionId = route.params.id
-    collection.value = await collections.getById(collectionId)
+    const collectionData = await collections.getById(collectionId)
+
+    // Map collection data with correct field names
+    collection.value = {
+      id: collectionData.uuid || collectionData.id,
+      name: collectionData.name || '',
+      description: collectionData.metadata?.['dc.description']?.[0]?.value || '',
+      // DSpace 7 uses archivedItemsCount for item count
+      itemCount: collectionData.archivedItemsCount || 0
+    }
 
     const itemsResponse = await collections.getItems(collectionId, {
       page: currentPage.value - 1,
@@ -71,10 +47,11 @@ async function loadCollection() {
 
     itemsList.value = itemsResponse._embedded?.searchResult?._embedded?.objects || []
     totalPages.value = itemsResponse.page?.totalPages || 1
-  } catch (error) {
-    collection.value = mockCollection
-    itemsList.value = mockItems
-    totalPages.value = 1
+
+    console.log('Loaded collection:', collection.value, 'items:', itemsList.value.length)
+  } catch (err) {
+    console.error('Error loading collection:', err)
+    error.value = err.message || t('common.error')
   } finally {
     isLoading.value = false
   }
@@ -110,6 +87,19 @@ onMounted(() => {
     <div v-if="isLoading" class="loading-container">
       <div class="spinner"></div>
       <p>{{ $t('common.loading') }}</p>
+    </div>
+
+    <!-- Error -->
+    <div v-else-if="error" class="error-container">
+      <div class="error-icon">
+        <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+          <circle cx="12" cy="12" r="10"/>
+          <line x1="12" y1="8" x2="12" y2="12"/>
+          <line x1="12" y1="16" x2="12.01" y2="16"/>
+        </svg>
+      </div>
+      <p>{{ error }}</p>
+      <button @click="loadCollection" class="retry-btn">{{ $t('common.retry') }}</button>
     </div>
 
     <!-- Content -->
@@ -192,6 +182,26 @@ onMounted(() => {
   @include flex-column-center;
   padding: $spacing-16;
   gap: $spacing-4;
+}
+
+.error-container {
+  @include flex-column-center;
+  padding: $spacing-16;
+  gap: $spacing-4;
+  text-align: center;
+
+  .error-icon {
+    color: $text-light;
+  }
+
+  p {
+    color: $text-muted;
+  }
+
+  .retry-btn {
+    @include button-primary;
+    margin-top: $spacing-4;
+  }
 }
 
 .collection-header {

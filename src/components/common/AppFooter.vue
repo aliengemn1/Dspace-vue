@@ -18,7 +18,7 @@ const helpLinks = computed(() => [
   { name: t('footer.userGuide'), path: '/help' },
   { name: t('footer.faq'), path: '/help#faq' },
   { name: t('footer.policies'), path: '/about#policies' },
-  { name: t('footer.accessibilty'), path: '/about#accessibility' }
+  { name: t('footer.accessibility'), path: '/about#accessibility' }
 ])
 
 const socialLinks = [

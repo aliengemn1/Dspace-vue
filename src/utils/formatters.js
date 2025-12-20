@@ -102,11 +102,13 @@ export function formatDate(date, locale = 'ar', options = {}) {
  * Format year based on locale
  * @param {string|number} year - Year to format
  * @param {string} locale - Locale code
- * @returns {string} - Formatted year
+ * @returns {string} - Formatted year (without thousands separator)
  */
 export function formatYear(year, locale = 'ar') {
   if (!year) return ''
-  return formatNumber(parseInt(year), locale)
+  const yearStr = String(parseInt(year))
+  // Use simple numeral conversion without grouping separators
+  return locale === 'ar' ? toArabicNumerals(yearStr) : yearStr
 }
 
 export default {

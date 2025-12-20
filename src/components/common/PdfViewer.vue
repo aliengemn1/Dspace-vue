@@ -4,8 +4,9 @@ import { useI18n } from 'vue-i18n'
 import * as pdfjsLib from 'pdfjs-dist'
 import pdfjsWorker from 'pdfjs-dist/build/pdf.worker.min.mjs?url'
 import { bitstreams } from '@/services/dspace'
+import { getAuthToken } from '@/services/api'
 
-// Configure PDF.js worker using local worker file
+// Configure PDF.js worker - use local worker file with Vite URL import
 pdfjsLib.GlobalWorkerOptions.workerSrc = pdfjsWorker
 
 const { t } = useI18n()
@@ -35,6 +36,7 @@ const currentPage = ref(1)
 const totalPages = ref(1)
 const scale = ref(1.5)
 const isFullscreen = ref(false)
+const showPreviewLimit = ref(false)
 
 // PDF document reference
 let pdfDoc = null
@@ -44,6 +46,16 @@ const scaleOptions = [0.5, 0.75, 1, 1.25, 1.5, 2, 2.5, 3]
 
 // Zoom percentage display
 const zoomPercent = computed(() => Math.round(scale.value * 100))
+
+// Preview limit: 25% of total pages (minimum 1 page)
+const maxPreviewPages = computed(() => {
+  return Math.max(1, Math.ceil(totalPages.value * 0.25))
+})
+
+// Check if current page is within preview limit
+const isWithinPreviewLimit = computed(() => {
+  return currentPage.value <= maxPreviewPages.value
+})
 
 // Load PDF document
 async function loadPdf() {
@@ -57,9 +69,16 @@ async function loadPdf() {
     // If fileId is provided, fetch as blob
     if (props.fileId) {
       const url = bitstreams.getContentUrl(props.fileId)
+      // Get auth token for authenticated requests
+      const authToken = getAuthToken()
+      const headers = {}
+      if (authToken) {
+        headers['Authorization'] = 'Bearer ' + authToken
+      }
       const response = await fetch(url, {
         method: 'GET',
-        credentials: 'include'
+        credentials: 'include',
+        headers: headers
       })
 
       if (!response.ok) {
@@ -143,16 +162,26 @@ function prevPage() {
 }
 
 function nextPage() {
-  if (currentPage.value < totalPages.value) {
+  if (currentPage.value < maxPreviewPages.value) {
     currentPage.value++
     renderPage(currentPage.value)
+    showPreviewLimit.value = false
+  } else if (currentPage.value >= maxPreviewPages.value) {
+    // Show preview limit message
+    showPreviewLimit.value = true
   }
 }
 
 function goToPage(page) {
   const pageNum = parseInt(page)
-  if (pageNum >= 1 && pageNum <= totalPages.value) {
+  if (pageNum >= 1 && pageNum <= maxPreviewPages.value) {
     currentPage.value = pageNum
+    renderPage(currentPage.value)
+    showPreviewLimit.value = false
+  } else if (pageNum > maxPreviewPages.value) {
+    // Show preview limit message
+    showPreviewLimit.value = true
+    currentPage.value = maxPreviewPages.value
     renderPage(currentPage.value)
   }
 }
@@ -265,16 +294,19 @@ watch(() => props.src, () => {
               :value="currentPage"
               @change="goToPage($event.target.value)"
               min="1"
-              :max="totalPages"
+              :max="maxPreviewPages"
             />
             <span class="page-separator">/</span>
-            <span>{{ totalPages }}</span>
+            <span>{{ maxPreviewPages }}</span>
+            <span class="preview-indicator" v-if="totalPages > maxPreviewPages">
+              ({{ t('item.viewer.previewOnly') || 'معاينة' }})
+            </span>
           </div>
           <button
             type="button"
             class="toolbar-btn"
             @click="nextPage"
-            :disabled="currentPage >= totalPages"
+            :disabled="currentPage >= maxPreviewPages"
             :title="t('pagination.next') || 'التالي'"
           >
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -351,6 +383,18 @@ watch(() => props.src, () => {
           </svg>
         </button>
       </div>
+    </div>
+
+    <!-- Preview Limit Banner -->
+    <div v-if="showPreviewLimit || (totalPages > maxPreviewPages && currentPage >= maxPreviewPages)" class="preview-limit-banner">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <circle cx="12" cy="12" r="10"/>
+        <line x1="12" y1="8" x2="12" y2="12"/>
+        <line x1="12" y1="16" x2="12.01" y2="16"/>
+      </svg>
+      <span>
+        {{ t('item.viewer.previewLimitMessage') || `عرض معاينة ${maxPreviewPages} صفحة من أصل ${totalPages} صفحة (25%)` }}
+      </span>
     </div>
 
     <!-- PDF Content -->
@@ -522,6 +566,30 @@ watch(() => props.src, () => {
 .page-separator {
   color: $gray-500;
   margin: 0 $spacing-1;
+}
+
+.preview-indicator {
+  color: $warning-color;
+  font-size: $font-size-xs;
+  margin-inline-start: $spacing-2;
+}
+
+// Preview Limit Banner
+.preview-limit-banner {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: $spacing-2;
+  padding: $spacing-3 $spacing-4;
+  background: linear-gradient(135deg, rgba($warning-color, 0.15), rgba($warning-color, 0.1));
+  border-bottom: 1px solid rgba($warning-color, 0.3);
+  color: $warning-color;
+  font-size: $font-size-sm;
+  font-weight: $font-weight-medium;
+
+  svg {
+    flex-shrink: 0;
+  }
 }
 
 // Zoom Controls

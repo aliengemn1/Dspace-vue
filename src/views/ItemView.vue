@@ -19,7 +19,7 @@ const showMediaViewer = ref(false)
 const showCitationCopied = ref(false)
 const showLinkCopied = ref(false)
 const selectedCitationFormat = ref('apa')
-const itemStats = ref({ views: 0, downloads: 0 })
+const itemStats = ref({ views: 0 })
 const thumbnailUrl = ref(null)
 
 // Filter files by type
@@ -98,7 +98,12 @@ const itemType = computed(() => {
 
 const itemDate = computed(() => {
   if (!item.value?.metadata) return ''
-  return utils.getMetadataValue(item.value.metadata, 'dc.date.issued') || ''
+  const dateValue = utils.getMetadataValue(item.value.metadata, 'dc.date.issued') || ''
+  // Extract only the year (first 4 characters) - no comma
+  if (dateValue && dateValue.length >= 4) {
+    return dateValue.substring(0, 4)
+  }
+  return dateValue
 })
 
 const publisher = computed(() => {
@@ -115,51 +120,74 @@ const citationFormats = [
 ]
 
 const formattedCitation = computed(() => {
-  const authorsText = authors.value.join(', ')
-  const year = itemDate.value ? itemDate.value.substring(0, 4) : ''
-  const titleText = title.value
-  const publisherText = publisher.value
+  const year = itemDate.value || 'n.d.'
+  const titleText = title.value || ''
+  const publisherText = publisher.value || ''
 
-  // Format authors for different styles
+  // Format authors for APA/Harvard style (Last, F. M.)
   const formatAuthorsAPA = () => {
-    if (authors.value.length === 0) return ''
+    if (authors.value.length === 0) return 'Unknown Author'
     if (authors.value.length === 1) return authors.value[0]
-    if (authors.value.length === 2) return `${authors.value[0]} & ${authors.value[1]}`
-    return `${authors.value[0]} et al.`
+    if (authors.value.length === 2) return `${authors.value[0]}, & ${authors.value[1]}`
+    // APA 7: List up to 20 authors, use et al. for 21+
+    if (authors.value.length <= 20) {
+      const lastAuthor = authors.value[authors.value.length - 1]
+      const otherAuthors = authors.value.slice(0, -1).join(', ')
+      return `${otherAuthors}, & ${lastAuthor}`
+    }
+    return `${authors.value.slice(0, 19).join(', ')}, ... ${authors.value[authors.value.length - 1]}`
   }
 
+  // Format authors for MLA style (Last, First)
   const formatAuthorsMLA = () => {
-    if (authors.value.length === 0) return ''
+    if (authors.value.length === 0) return 'Unknown Author'
     if (authors.value.length === 1) return authors.value[0]
     if (authors.value.length === 2) return `${authors.value[0]}, and ${authors.value[1]}`
+    // MLA 9: Use et al. for 3+ authors
     return `${authors.value[0]}, et al.`
   }
 
+  // Format authors for Chicago style
   const formatAuthorsChicago = () => {
-    if (authors.value.length === 0) return ''
-    if (authors.value.length <= 3) return authors.value.join(', ')
+    if (authors.value.length === 0) return 'Unknown Author'
+    if (authors.value.length === 1) return authors.value[0]
+    if (authors.value.length === 2) return `${authors.value[0]} and ${authors.value[1]}`
+    if (authors.value.length === 3) return `${authors.value[0]}, ${authors.value[1]}, and ${authors.value[2]}`
+    // Chicago: Use et al. for 4+ authors in notes, list all in bibliography
     return `${authors.value[0]} et al.`
   }
 
   switch (selectedCitationFormat.value) {
     case 'apa':
-      // APA 7th Edition: Author, A. A. (Year). Title of work. Publisher. URL
-      return `${formatAuthorsAPA()}. (${year}). ${titleText}. ${publisherText}.`
+      // APA 7th Edition: Author, A. A. (Year). Title of work. Publisher.
+      if (publisherText) {
+        return `${formatAuthorsAPA()} (${year}). ${titleText}. ${publisherText}.`
+      }
+      return `${formatAuthorsAPA()} (${year}). ${titleText}.`
 
     case 'mla':
       // MLA 9th Edition: Author. "Title." Publisher, Year.
-      return `${formatAuthorsMLA()}. "${titleText}." ${publisherText}, ${year}.`
+      if (publisherText) {
+        return `${formatAuthorsMLA()}. "${titleText}." ${publisherText}, ${year}.`
+      }
+      return `${formatAuthorsMLA()}. "${titleText}." ${year}.`
 
     case 'chicago':
-      // Chicago 17th Edition: Author. Title. Place: Publisher, Year.
-      return `${formatAuthorsChicago()}. ${titleText}. ${publisherText}, ${year}.`
+      // Chicago 17th Edition (Author-Date): Author. Year. "Title." Publisher.
+      if (publisherText) {
+        return `${formatAuthorsChicago()}. ${year}. "${titleText}." ${publisherText}.`
+      }
+      return `${formatAuthorsChicago()}. ${year}. "${titleText}."`
 
     case 'harvard':
-      // Harvard: Author (Year) Title. Publisher.
-      return `${formatAuthorsAPA()} (${year}) ${titleText}. ${publisherText}.`
+      // Harvard: Author (Year) Title, Publisher.
+      if (publisherText) {
+        return `${formatAuthorsAPA()} (${year}) ${titleText}, ${publisherText}.`
+      }
+      return `${formatAuthorsAPA()} (${year}) ${titleText}.`
 
     default:
-      return `${authorsText} (${year}). ${titleText}. ${publisherText}.`
+      return `${authors.value.join(', ')} (${year}). ${titleText}. ${publisherText}.`
   }
 })
 
@@ -274,12 +302,23 @@ async function loadItem() {
       console.log('Thumbnail URL from item _links:', thumbnailUrl.value)
     }
 
-    // Get item statistics
+    // Record this view in DSpace statistics
     try {
-      const stats = await statistics.getItemStats(itemId)
-      itemStats.value = stats
+      await statistics.recordItemView(itemId)
+      console.log('View recorded for item:', itemId)
+    } catch (viewErr) {
+      console.warn('Could not record view:', viewErr)
+    }
+
+    // Get item statistics from API (after recording view)
+    try {
+      const stats = await statistics.getItemStats(itemId, false) // Don't use cache to get fresh stats
+      console.log('Item statistics from API:', stats)
+      itemStats.value = { views: stats.views || 0 }
+      console.log('Views count:', itemStats.value.views)
     } catch (statsErr) {
       console.warn('Could not load statistics:', statsErr)
+      itemStats.value = { views: 0 }
     }
   } catch (err) {
     console.error('Error loading item:', err)
@@ -301,11 +340,6 @@ function formatFileSize(bytes) {
   const sizes = ['Bytes', 'KB', 'MB', 'GB']
   const i = Math.floor(Math.log(bytes) / Math.log(k))
   return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i]
-}
-
-function downloadFile(file) {
-  const url = bitstreams.getContentUrl(file.id)
-  window.open(url, '_blank')
 }
 
 function copyToClipboard(text, type = 'link') {
@@ -490,19 +524,6 @@ onMounted(() => {
                   </svg>
                   {{ isArabic ? 'عرض' : 'View' }}
                 </button>
-                <button
-                  v-if="primaryFile"
-                  class="btn btn-success btn-action"
-                  @click="downloadFile(primaryFile)"
-                  :aria-label="isArabic ? 'تحميل الملف' : 'Download file'"
-                >
-                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
-                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
-                    <polyline points="7 10 12 15 17 10"/>
-                    <line x1="12" y1="15" x2="12" y2="3"/>
-                  </svg>
-                  {{ isArabic ? 'تحميل' : 'Download' }}
-                </button>
               </div>
             </div>
 
@@ -560,15 +581,6 @@ onMounted(() => {
                   </svg>
                   <span class="stat-value">{{ itemStats.views.toLocaleString('ar-SA') }}</span>
                   <span class="stat-label">{{ isArabic ? 'مشاهدة' : 'views' }}</span>
-                </div>
-                <div class="stat-badge">
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
-                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
-                    <polyline points="7 10 12 15 17 10"/>
-                    <line x1="12" y1="15" x2="12" y2="3"/>
-                  </svg>
-                  <span class="stat-value">{{ itemStats.downloads.toLocaleString('ar-SA') }}</span>
-                  <span class="stat-label">{{ isArabic ? 'تحميل' : 'downloads' }}</span>
                 </div>
               </div>
 
@@ -637,7 +649,6 @@ onMounted(() => {
                 :files="files"
                 :selected-file="selectedFile"
                 @close="closeMediaViewer"
-                @download="downloadFile(selectedFile)"
                 @select-file="(file) => selectedFile = file"
               />
             </div>
@@ -739,18 +750,6 @@ onMounted(() => {
                       <circle cx="12" cy="12" r="3"/>
                     </svg>
                     <span class="btn-text">{{ isArabic ? 'عرض' : 'View' }}</span>
-                  </button>
-                  <button
-                    class="btn btn-download-file"
-                    @click="downloadFile(file)"
-                    :aria-label="`${isArabic ? 'تحميل' : 'Download'} ${file.name}`"
-                  >
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
-                      <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
-                      <polyline points="7 10 12 15 17 10"/>
-                      <line x1="12" y1="15" x2="12" y2="3"/>
-                    </svg>
-                    <span class="btn-text">{{ isArabic ? 'تحميل' : 'Download' }}</span>
                   </button>
                 </div>
               </div>
@@ -1430,8 +1429,7 @@ onMounted(() => {
   }
 }
 
-.btn-view-file,
-.btn-download-file {
+.btn-view-file {
   display: inline-flex;
   align-items: center;
   gap: $spacing-2;
@@ -1441,18 +1439,15 @@ onMounted(() => {
   border-radius: $border-radius-lg;
   cursor: pointer;
   transition: all 0.3s ease;
+  color: $primary-color;
+  background: rgba($primary-color, 0.1);
+  border: 1px solid rgba($primary-color, 0.3);
 
   .btn-text {
     @include media-down('xs') {
       display: none;
     }
   }
-}
-
-.btn-view-file {
-  color: $primary-color;
-  background: rgba($primary-color, 0.1);
-  border: 1px solid rgba($primary-color, 0.3);
 
   &:hover {
     background: $primary-color;
@@ -1460,18 +1455,6 @@ onMounted(() => {
     border-color: $primary-color;
     transform: translateY(-2px);
     box-shadow: 0 4px 12px rgba($primary-color, 0.3);
-  }
-}
-
-.btn-download-file {
-  color: $white;
-  background: linear-gradient(135deg, $success-color 0%, color.adjust($success-color, $lightness: -8%) 100%);
-  border: none;
-  box-shadow: 0 2px 8px rgba($success-color, 0.3);
-
-  &:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 6px 16px rgba($success-color, 0.4);
   }
 }
 

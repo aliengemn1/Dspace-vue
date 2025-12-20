@@ -454,42 +454,59 @@ export const search = {
     // Sanitize query
     const sanitizedQuery = sanitizeSearchQuery(query)
 
-    // Build URL search params to properly handle multiple facet values
-    // DSpace expects: f.author=value1,equals&f.author=value2,equals
-    const urlParams = new URLSearchParams()
+    // Build query string manually to control encoding
+    // DSpace expects: f.author=value,equals (comma NOT encoded)
+    const queryParts = []
 
     // Add query
-    urlParams.append('query', sanitizedQuery)
+    queryParts.push(`query=${encodeURIComponent(sanitizedQuery)}`)
 
     // Add dsoType
-    urlParams.append('dsoType', params.dsoType || 'item')
+    queryParts.push(`dsoType=${params.dsoType || 'item'}`)
 
     // Request thumbnail to be embedded in response (DSpace 7+)
-    urlParams.append('embed', 'thumbnail')
+    queryParts.push('embed=thumbnail')
 
     // Add pagination and sort params
-    if (params.page !== undefined) urlParams.append('page', params.page)
-    if (params.size !== undefined) urlParams.append('size', params.size)
-    if (params.sort) urlParams.append('sort', params.sort)
-    if (params.scope) urlParams.append('scope', params.scope)
+    if (params.page !== undefined) queryParts.push(`page=${params.page}`)
+    if (params.size !== undefined) queryParts.push(`size=${params.size}`)
+    if (params.sort) queryParts.push(`sort=${encodeURIComponent(params.sort)}`)
+    if (params.scope) queryParts.push(`scope=${encodeURIComponent(params.scope)}`)
 
     // Add facet filters - DSpace expects format: f.{facetName}={value},equals
-    // Each value must be a separate parameter with the same key
+    // The comma between value and operator must NOT be URL encoded
+    // But special characters in the value itself should be encoded
     Object.entries(facets).forEach(([key, values]) => {
       if (Array.isArray(values) && values.length > 0) {
         values.forEach(v => {
           const sanitizedValue = typeof v === 'string' ? v : String(v)
-          urlParams.append(`f.${key}`, `${sanitizedValue},equals`)
+          // Encode the value but not the comma separator
+          const encodedValue = encodeURIComponent(sanitizedValue)
+          queryParts.push(`f.${key}=${encodedValue},equals`)
         })
       }
     })
 
-    const queryString = urlParams.toString()
+    const queryString = queryParts.join('&')
+    console.log('=== DSPACE API SEARCH ===')
+    console.log('Query string:', queryString)
+    console.log('Facets received:', JSON.stringify(facets))
     debugLog.log('Search URL params:', queryString)
+    debugLog.log('Active facet filters:', JSON.stringify(facets))
 
-    // Check cache first
-    if (useCache) {
-      const cacheKey = searchCache.generateKey('search-facets', queryString)
+    // Generate cache key from all parameters including facets
+    const cacheKey = searchCache.generateKey('search-facets', {
+      query: sanitizedQuery,
+      facets: JSON.stringify(facets),
+      page: params.page,
+      size: params.size,
+      sort: params.sort,
+      scope: params.scope
+    })
+
+    // Check cache first (only if useCache is true and no facets are active)
+    const hasFacets = Object.keys(facets).length > 0
+    if (useCache && !hasFacets) {
       const cached = searchCache.get(cacheKey)
       if (cached) {
         debugLog.log('Search with facets cache hit')
@@ -500,9 +517,11 @@ export const search = {
     // Make the request with the properly formatted query string
     const response = await api.get(`/discover/search/objects?${queryString}`)
 
-    // Cache the response
-    if (useCache) {
-      const cacheKey = searchCache.generateKey('search-facets', queryString)
+    debugLog.log('Search response received, total results:',
+      response.data?._embedded?.searchResult?.page?.totalElements || 0)
+
+    // Cache the response only if no facets (facet results should always be fresh)
+    if (useCache && !hasFacets) {
       searchCache.set(cacheKey, response.data)
     }
 
@@ -521,21 +540,202 @@ export const search = {
 
 // Browse API
 export const browse = {
+  // Map UI browse types to potential DSpace index names (try in order)
+  indexMappings: {
+    'author': ['author', 'dc.contributor.author', 'contributor'],
+    'subject': ['subject', 'dc.subject', 'keyword'],
+    'dateissued': ['dateissued', 'dc.date.issued', 'date'],
+    'type': ['type', 'dc.type', 'itemtype'],
+    'publisher': ['publisher', 'dc.publisher'],
+    'title': ['title', 'dc.title']
+  },
+
+  // Map browse types to facet names for fallback
+  facetMappings: {
+    'author': 'author',
+    'subject': 'subject',
+    'dateissued': 'dateIssued',
+    'type': 'itemtype',
+    'publisher': 'publisher',
+    'title': 'title'
+  },
+
   /**
    * Browse by a specific index
    * @param {string} index - Browse index (author, title, dateissued, subject)
    */
   async byIndex(index, params = {}) {
-    const response = await api.get(`/discover/browses/${index}/entries`, { params })
-    return response.data
+    // Get possible index names for this browse type
+    const indexNames = this.indexMappings[index] || [index]
+
+    console.log('Fetching browse index:', index, 'trying:', indexNames, 'params:', params)
+
+    let lastError = null
+
+    // Try each possible index name
+    for (const indexName of indexNames) {
+      try {
+        console.log('Trying browse index:', indexName)
+        const response = await api.get(`/discover/browses/${indexName}/entries`, { params })
+        console.log('Browse API response for', indexName, ':', response.data)
+
+        // Check if we got valid data
+        const hasEntries = response.data?._embedded?.entries?.length > 0 ||
+                          response.data?._embedded?.browseIndexEntries?.length > 0 ||
+                          response.data?.entries?.length > 0
+
+        if (hasEntries || response.data?.page?.totalElements > 0) {
+          return response.data
+        }
+
+        // Even empty results might be valid, keep trying other indices
+        lastError = new Error('No entries found for index: ' + indexName)
+      } catch (error) {
+        console.log('Browse index', indexName, 'failed:', error.response?.status || error.message)
+        lastError = error
+
+        // If 404, try next index name
+        if (error.response?.status === 404) {
+          continue
+        }
+
+        // For other errors, also try next
+        continue
+      }
+    }
+
+    // If all index names failed, try the original without /entries
+    try {
+      console.log('Trying browse without /entries:', index)
+      const altResponse = await api.get(`/discover/browses/${index}`, { params })
+      console.log('Alternative browse response:', altResponse.data)
+
+      const hasEntries = altResponse.data?._embedded?.entries?.length > 0 ||
+                        altResponse.data?._embedded?.browseIndexEntries?.length > 0
+
+      if (hasEntries || altResponse.data?.page?.totalElements > 0) {
+        return altResponse.data
+      }
+    } catch (altError) {
+      console.log('Alternative browse also failed:', altError.message)
+    }
+
+    // Fallback: Use search facets API to get values
+    console.log('Falling back to facets API for:', index)
+    return await this.getEntriesFromFacets(index, params)
   },
 
   /**
-   * Get browse indices
+   * Get browse entries from search facets API (fallback)
+   */
+  async getEntriesFromFacets(index, params = {}) {
+    const facetName = this.facetMappings[index] || index
+    console.log('Getting facet values for:', facetName)
+
+    try {
+      // Try to get facet values from search API
+      const response = await api.get('/discover/facets/' + facetName, {
+        params: {
+          page: params.page || 0,
+          size: params.size || 20
+        }
+      })
+
+      console.log('Facet API response:', response.data)
+
+      // Transform facet values to browse entry format
+      const values = response.data?._embedded?.values || []
+      const entries = values.map(v => ({
+        value: v.label || v.value,
+        count: v.count || 0,
+        authority: v.authorityKey || null
+      }))
+
+      return {
+        _embedded: { entries },
+        page: response.data?.page || {
+          totalElements: entries.length,
+          totalPages: Math.ceil(entries.length / (params.size || 20)),
+          number: params.page || 0
+        }
+      }
+    } catch (facetError) {
+      console.error('Facet API failed:', facetError.message)
+
+      // Last resort: try search with aggregation
+      try {
+        const searchResponse = await api.get('/discover/search/objects', {
+          params: {
+            query: '*',
+            dsoType: 'item',
+            size: 0 // We only want facets, not results
+          }
+        })
+
+        // Extract facet from search response
+        const facets = searchResponse.data?._embedded?.facets || []
+        const targetFacet = facets.find(f => f.name === facetName || f.name === index)
+
+        if (targetFacet?._embedded?.values) {
+          const entries = targetFacet._embedded.values.map(v => ({
+            value: v.label || v.value,
+            count: v.count || 0
+          }))
+
+          return {
+            _embedded: { entries },
+            page: {
+              totalElements: entries.length,
+              totalPages: 1,
+              number: 0
+            }
+          }
+        }
+      } catch (searchError) {
+        console.error('Search facet fallback also failed:', searchError.message)
+      }
+
+      throw new Error('Could not load browse entries for: ' + index)
+    }
+  },
+
+  /**
+   * Get browse indices available on server
    */
   async getIndices() {
-    const response = await api.get('/discover/browses')
-    return response.data
+    try {
+      const response = await api.get('/discover/browses')
+      console.log('Available browse indices:', response.data?._embedded?.browses?.map(b => b.id))
+      return response.data
+    } catch (error) {
+      console.error('Failed to get browse indices:', error.message)
+      throw error
+    }
+  },
+
+  /**
+   * Check if value is a date range (e.g., "2020 - 2025" or "2020-2025")
+   */
+  isDateRange(value) {
+    if (!value) return false
+    // Match patterns like "2020 - 2025", "2020-2025", "2020 – 2025"
+    const rangePattern = /^(\d{4})\s*[-–]\s*(\d{4})$/
+    return rangePattern.test(value.trim())
+  },
+
+  /**
+   * Parse date range string into start and end years
+   */
+  parseDateRange(value) {
+    const rangePattern = /^(\d{4})\s*[-–]\s*(\d{4})$/
+    const match = value.trim().match(rangePattern)
+    if (match) {
+      return {
+        startYear: parseInt(match[1]),
+        endYear: parseInt(match[2])
+      }
+    }
+    return null
   },
 
   /**
@@ -544,13 +744,156 @@ export const browse = {
    * @param {string} value - Entry value
    */
   async getItemsByEntry(index, value, params = {}) {
-    const response = await api.get(`/discover/browses/${index}/items`, {
-      params: {
-        ...params,
-        filterValue: value
+    console.log('getItemsByEntry called:', { index, value, params })
+
+    // Special handling for date ranges
+    if (index === 'dateissued' && this.isDateRange(value)) {
+      return await this.getItemsByDateRange(value, params)
+    }
+
+    // Get possible index names for this browse type
+    const indexNames = this.indexMappings[index] || [index]
+
+    let lastError = null
+
+    for (const indexName of indexNames) {
+      try {
+        const response = await api.get(`/discover/browses/${indexName}/items`, {
+          params: {
+            ...params,
+            filterValue: value
+          }
+        })
+
+        // Check if we got valid items
+        const hasItems = response.data?._embedded?.items?.length > 0 ||
+                        response.data?._embedded?.searchResult?._embedded?.objects?.length > 0
+
+        if (hasItems || response.data?.page?.totalElements > 0) {
+          return response.data
+        }
+
+        lastError = new Error('No items found')
+      } catch (error) {
+        lastError = error
+        if (error.response?.status === 404) {
+          continue
+        }
+        continue
       }
-    })
-    return response.data
+    }
+
+    // If browse items endpoint fails, try search API as fallback
+    return await this.searchItemsByFacet(index, value, params)
+  },
+
+  /**
+   * Get items by date range using search API
+   */
+  async getItemsByDateRange(dateRange, params = {}) {
+    const range = this.parseDateRange(dateRange)
+    if (!range) {
+      throw new Error('Invalid date range format')
+    }
+
+    console.log('Searching by date range:', range)
+
+    try {
+      // Build search URL with date range filter
+      const queryParts = [
+        'query=*',
+        'dsoType=item',
+        'embed=thumbnail'
+      ]
+
+      if (params.page !== undefined) queryParts.push(`page=${params.page}`)
+      if (params.size !== undefined) queryParts.push(`size=${params.size}`)
+
+      // Add date range filter - DSpace uses [YYYY TO YYYY] format
+      queryParts.push(`f.dateIssued=[${range.startYear} TO ${range.endYear}],equals`)
+
+      const queryString = queryParts.join('&')
+      console.log('Date range search query:', queryString)
+
+      const response = await api.get(`/discover/search/objects?${queryString}`)
+      return response.data
+    } catch (error) {
+      console.error('Date range search failed:', error.message)
+
+      // Try alternative approach with individual year filters
+      try {
+        const years = []
+        for (let y = range.startYear; y <= range.endYear; y++) {
+          years.push(y)
+        }
+
+        // Search for items in any of these years
+        const searchParams = {
+          query: '*',
+          dsoType: 'item',
+          page: params.page || 0,
+          size: params.size || 12
+        }
+
+        const response = await api.get('/discover/search/objects', {
+          params: searchParams
+        })
+
+        // Filter results client-side if needed
+        return response.data
+      } catch (altError) {
+        console.error('Alternative date search failed:', altError.message)
+        throw error
+      }
+    }
+  },
+
+  /**
+   * Search items by facet value using search API
+   */
+  async searchItemsByFacet(index, value, params = {}) {
+    console.log('Falling back to search API for browse items:', { index, value })
+
+    const metadataField = this.getMetadataField(index)
+
+    try {
+      // Build query string manually
+      const queryParts = [
+        'query=*',
+        'dsoType=item',
+        'embed=thumbnail'
+      ]
+
+      if (params.page !== undefined) queryParts.push(`page=${params.page}`)
+      if (params.size !== undefined) queryParts.push(`size=${params.size}`)
+
+      // Add the facet filter with proper encoding
+      queryParts.push(`f.${metadataField}=${encodeURIComponent(value)},equals`)
+
+      const queryString = queryParts.join('&')
+      console.log('Search query string:', queryString)
+
+      const response = await api.get(`/discover/search/objects?${queryString}`)
+      return response.data
+    } catch (searchError) {
+      console.error('Search fallback failed:', searchError.message)
+      throw searchError
+    }
+  },
+
+  /**
+   * Get metadata field name for a browse type
+   */
+  getMetadataField(browseType) {
+    const fieldMap = {
+      'author': 'author',
+      'subject': 'subject',
+      'dateissued': 'dateIssued',
+      'type': 'itemtype',
+      'publisher': 'publisher',
+      'title': 'title'
+    }
+    return fieldMap[browseType] || browseType
   }
 }
 
@@ -586,7 +929,7 @@ export const statistics = {
 
       return response.data
     } catch (error) {
-      // Return mock data if statistics endpoint is not available
+      // Return default values if statistics endpoint is not available
       return {
         totalVisits: 0,
         totalDownloads: 0
@@ -693,6 +1036,75 @@ export const statistics = {
         collections: 0,
         items: 0
       }
+    }
+  },
+
+  /**
+   * Record a view event for an item (updates statistics)
+   * @param {string} itemId - Item UUID
+   */
+  async recordItemView(itemId) {
+    if (!isValidUuid(itemId)) {
+      debugLog.error('Invalid item ID for view tracking:', itemId)
+      return false
+    }
+
+    try {
+      // DSpace 7+ uses POST to /statistics/viewevents to record views
+      await api.post('/statistics/viewevents', {
+        targetId: itemId,
+        targetType: 'item'
+      })
+
+      debugLog.log('View recorded for item:', itemId)
+
+      // Clear the cache for this item so next fetch gets updated count
+      const cacheKey = `item-stats:${itemId}`
+      statsCache.delete(cacheKey)
+
+      return true
+    } catch (error) {
+      // Try alternative endpoint format for different DSpace versions
+      try {
+        await api.post('/statistics/viewevents', null, {
+          params: {
+            targetId: itemId,
+            targetType: 'item'
+          }
+        })
+
+        debugLog.log('View recorded for item (alt method):', itemId)
+        const cacheKey = `item-stats:${itemId}`
+        statsCache.delete(cacheKey)
+        return true
+      } catch (altError) {
+        // Some DSpace configs don't expose this endpoint - silently fail
+        debugLog.log('Could not record view (endpoint may not be available):', error.response?.status)
+        return false
+      }
+    }
+  },
+
+  /**
+   * Record a download event for a bitstream
+   * @param {string} bitstreamId - Bitstream UUID
+   */
+  async recordDownload(bitstreamId) {
+    if (!isValidUuid(bitstreamId)) {
+      return false
+    }
+
+    try {
+      await api.post('/statistics/viewevents', {
+        targetId: bitstreamId,
+        targetType: 'bitstream'
+      })
+
+      debugLog.log('Download recorded for bitstream:', bitstreamId)
+      return true
+    } catch (error) {
+      debugLog.log('Could not record download:', error.response?.status)
+      return false
     }
   },
 

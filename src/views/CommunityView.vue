@@ -12,41 +12,45 @@ const community = ref(null)
 const collectionList = ref([])
 const isLoading = ref(true)
 
+const error = ref(null)
+
 const breadcrumbItems = computed(() => [
   { label: t('nav.home'), path: '/' },
   { label: t('nav.communities'), path: '/communities' },
   { label: community.value?.name || t('community.title'), path: null }
 ])
 
-// Mock data
-const mockCommunity = {
-  id: '1',
-  name: 'الرسائل العلمية',
-  description: 'رسائل الماجستير والدكتوراه من مختلف الجامعات السعودية. تشمل هذه المجموعة الرسائل العلمية في مختلف التخصصات العلمية والإنسانية.',
-  itemCount: 60000
-}
-
-const mockCollections = [
-  { id: '1', name: 'رسائل جامعة الملك سعود', itemCount: 15000 },
-  { id: '2', name: 'رسائل جامعة الملك عبدالعزيز', itemCount: 12000 },
-  { id: '3', name: 'رسائل جامعة أم القرى', itemCount: 10000 },
-  { id: '4', name: 'رسائل جامعة الإمام', itemCount: 8000 },
-  { id: '5', name: 'رسائل جامعة الملك فهد للبترول', itemCount: 7000 },
-  { id: '6', name: 'رسائل الجامعات الأخرى', itemCount: 8000 }
-]
-
 async function loadCommunity() {
   isLoading.value = true
 
   try {
     const communityId = route.params.id
-    community.value = await communities.getById(communityId)
+    const communityData = await communities.getById(communityId)
+
+    // Map community data with correct field names
+    community.value = {
+      id: communityData.uuid || communityData.id,
+      name: communityData.name || '',
+      description: communityData.metadata?.['dc.description']?.[0]?.value || '',
+      // DSpace 7 uses archivedItemsCount for item count
+      itemCount: communityData.archivedItemsCount || 0
+    }
 
     const collectionsResponse = await communities.getCollections(communityId)
-    collectionList.value = collectionsResponse._embedded?.collections || []
-  } catch (error) {
-    community.value = mockCommunity
-    collectionList.value = mockCollections
+    const collectionsData = collectionsResponse._embedded?.collections || []
+
+    // Map collection data with correct field names
+    collectionList.value = collectionsData.map(coll => ({
+      id: coll.uuid || coll.id,
+      name: coll.name || '',
+      // DSpace 7 uses archivedItemsCount for item count in collections too
+      itemCount: coll.archivedItemsCount || 0
+    }))
+
+    console.log('Loaded community:', community.value, 'collections:', collectionList.value.length)
+  } catch (err) {
+    console.error('Error loading community:', err)
+    error.value = err.message || t('common.error')
   } finally {
     isLoading.value = false
   }
@@ -77,6 +81,19 @@ onMounted(() => {
     <div v-if="isLoading" class="loading-container">
       <div class="spinner"></div>
       <p>{{ $t('common.loading') }}</p>
+    </div>
+
+    <!-- Error -->
+    <div v-else-if="error" class="error-container">
+      <div class="error-icon">
+        <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+          <circle cx="12" cy="12" r="10"/>
+          <line x1="12" y1="8" x2="12" y2="12"/>
+          <line x1="12" y1="16" x2="12.01" y2="16"/>
+        </svg>
+      </div>
+      <p>{{ error }}</p>
+      <button @click="loadCommunity" class="retry-btn">{{ $t('common.retry') }}</button>
     </div>
 
     <!-- Content -->
@@ -167,6 +184,26 @@ onMounted(() => {
   @include flex-column-center;
   padding: $spacing-16;
   gap: $spacing-4;
+}
+
+.error-container {
+  @include flex-column-center;
+  padding: $spacing-16;
+  gap: $spacing-4;
+  text-align: center;
+
+  .error-icon {
+    color: $text-light;
+  }
+
+  p {
+    color: $text-muted;
+  }
+
+  .retry-btn {
+    @include button-primary;
+    margin-top: $spacing-4;
+  }
 }
 
 .community-header {

@@ -19,7 +19,7 @@ const showMediaViewer = ref(false)
 const showCitationCopied = ref(false)
 const showLinkCopied = ref(false)
 const selectedCitationFormat = ref('apa')
-const itemStats = ref({ views: 0 })
+const itemStats = ref({ views: 0, downloads: 0 })
 const thumbnailUrl = ref(null)
 
 // Filter files by type
@@ -57,6 +57,7 @@ const identifierMetadata = computed(() => {
   if (!item.value?.metadata) return []
   const metadataMap = item.value.metadata
   return [
+    { key: 'callnumber', label: 'Call Number', labelAr: 'رقم الطلب', value: utils.getMetadataValue(metadataMap, 'dc.identifier.callnumber') || utils.getMetadataValue(metadataMap, 'dc.identifier.callnum') },
     { key: 'uri', label: 'Handle', labelAr: 'المعرف الدائم', value: utils.getMetadataValue(metadataMap, 'dc.identifier.uri') },
     { key: 'doi', label: 'DOI', labelAr: 'معرف DOI', value: utils.getMetadataValue(metadataMap, 'dc.identifier.doi') },
     { key: 'isbn', label: 'ISBN', labelAr: 'رقم ISBN', value: utils.getMetadataValue(metadataMap, 'dc.identifier.isbn') },
@@ -71,6 +72,13 @@ const detailMetadata = computed(() => {
     { key: 'type', label: t('item.fields.type'), labelAr: 'النوع', value: utils.getMetadataValue(metadataMap, 'dc.type') },
     { key: 'language', label: t('item.fields.language'), labelAr: 'اللغة', value: utils.getMetadataValue(metadataMap, 'dc.language.iso') },
     { key: 'publisher', label: t('item.fields.publisher'), labelAr: 'الناشر', value: utils.getMetadataValue(metadataMap, 'dc.publisher') },
+    { key: 'city', label: t('item.fields.city'), labelAr: 'مكان النشر', value: utils.getMetadataValue(metadataMap, 'dc.publisher.place') || utils.getMetadataValue(metadataMap, 'dc.publisher.city') },
+    { key: 'country', label: 'Country', labelAr: 'الدولة', value: utils.getMetadataValue(metadataMap, 'dc.publisher.country') || utils.getMetadataValue(metadataMap, 'dc.coverage.spatial') },
+    { key: 'dateHijri', label: t('item.fields.dateHijri'), labelAr: 'التاريخ الهجري', value: utils.getMetadataValue(metadataMap, 'dc.date.issuedhijri') || utils.getMetadataValue(metadataMap, 'dc.date.hijri') },
+    { key: 'extent', label: t('item.fields.extent'), labelAr: 'الحجم/عدد الصفحات', value: utils.getMetadataValue(metadataMap, 'dc.format.extent') || utils.getMetadataValue(metadataMap, 'dc.description.extent') },
+    { key: 'theses', label: 'Thesis Info', labelAr: 'معلومات الرسالة', value: utils.getMetadataValue(metadataMap, 'dc.description.theses') },
+    { key: 'subjectIsi', label: 'ISI Subject', labelAr: 'تصنيف ISI', value: utils.getMetadataValue(metadataMap, 'dc.subject.isi') },
+    { key: 'description', label: 'Description', labelAr: 'الوصف', value: utils.getMetadataValue(metadataMap, 'dc.description') },
     { key: 'rights', label: t('item.fields.rights'), labelAr: 'الحقوق', value: utils.getMetadataValue(metadataMap, 'dc.rights') },
     { key: 'format', label: 'Format', labelAr: 'الصيغة', value: utils.getMetadataValue(metadataMap, 'dc.format') }
   ].filter(m => m.value)
@@ -111,12 +119,85 @@ const publisher = computed(() => {
   return utils.getMetadataValue(item.value.metadata, 'dc.publisher') || ''
 })
 
+const source = computed(() => {
+  if (!item.value?.metadata) return ''
+  return utils.getMetadataValue(item.value.metadata, 'dc.source') || ''
+})
+
+const partOf = computed(() => {
+  if (!item.value?.metadata) return ''
+  return utils.getMetadataValue(item.value.metadata, 'dc.relation.ispartof') || ''
+})
+
+const advisor = computed(() => {
+  if (!item.value?.metadata) return ''
+  return utils.getMetadataValue(item.value.metadata, 'dc.contributor.advisor') || ''
+})
+
+const itemLanguage = computed(() => {
+  if (!item.value?.metadata) return ''
+  const lang = utils.getMetadataValue(item.value.metadata, 'dc.language.iso') || ''
+  // Map common language codes to readable names
+  const langMap = {
+    'ar': 'العربية',
+    'en': 'English',
+    'en_US': 'English',
+    'ar_SA': 'العربية',
+    'fr': 'Français',
+    'de': 'Deutsch'
+  }
+  return langMap[lang] || lang
+})
+
+const format = computed(() => {
+  if (!item.value?.metadata) return ''
+  return utils.getMetadataValue(item.value.metadata, 'dc.format') || ''
+})
+
+const extent = computed(() => {
+  if (!item.value?.metadata) return ''
+  return utils.getMetadataValue(item.value.metadata, 'dc.format.extent') ||
+         utils.getMetadataValue(item.value.metadata, 'dc.description.extent') || ''
+})
+
+const callNumber = computed(() => {
+  if (!item.value?.metadata) return ''
+  return utils.getMetadataValue(item.value.metadata, 'dc.identifier.callnumber') ||
+         utils.getMetadataValue(item.value.metadata, 'dc.identifier.callnum') || ''
+})
+
+const city = computed(() => {
+  if (!item.value?.metadata) return ''
+  return utils.getMetadataValue(item.value.metadata, 'dc.publisher.place') ||
+         utils.getMetadataValue(item.value.metadata, 'dc.publisher.city') || ''
+})
+
+const dateHijri = computed(() => {
+  if (!item.value?.metadata) return ''
+  return utils.getMetadataValue(item.value.metadata, 'dc.date.issuedhijri') ||
+         utils.getMetadataValue(item.value.metadata, 'dc.date.hijri') || ''
+})
+
+const isbn = computed(() => {
+  if (!item.value?.metadata) return ''
+  return utils.getMetadataValue(item.value.metadata, 'dc.identifier.isbn') || ''
+})
+
+const description = computed(() => {
+  if (!item.value?.metadata) return ''
+  return utils.getMetadataValue(item.value.metadata, 'dc.description') || ''
+})
+
 // Citation formats
 const citationFormats = [
   { id: 'apa', label: 'APA' },
   { id: 'mla', label: 'MLA' },
   { id: 'chicago', label: 'Chicago' },
-  { id: 'harvard', label: 'Harvard' }
+  { id: 'harvard', label: 'Harvard' },
+  { id: 'library', label: locale.value === 'ar' ? 'تنسيق المكتبة' : 'Library Format' },
+  { id: 'bibtex', label: 'BibTeX' },
+  { id: 'endnote', label: 'EndNote' },
+  { id: 'ris', label: 'RIS' }
 ]
 
 const formattedCitation = computed(() => {
@@ -185,6 +266,48 @@ const formattedCitation = computed(() => {
         return `${formatAuthorsAPA()} (${year}) ${titleText}, ${publisherText}.`
       }
       return `${formatAuthorsAPA()} (${year}) ${titleText}.`
+
+    case 'library':
+      // Library catalog format: Author. Title / Author. -- Publisher, Year.
+      const authorsText = authors.value.length > 0 ? authors.value.join(' ; ') : 'Unknown Author'
+      if (publisherText) {
+        return `${authorsText}. ${titleText} / ${authorsText}. -- ${publisherText}, ${year}.`
+      }
+      return `${authorsText}. ${titleText} / ${authorsText}. -- ${year}.`
+
+    case 'bibtex':
+      // BibTeX format
+      const bibtexKey = (authors.value[0]?.split(' ')[0] || 'unknown') + year
+      const bibtexAuthors = authors.value.join(' and ')
+      return `@article{${bibtexKey},
+  author = {${bibtexAuthors || 'Unknown'}},
+  title = {${titleText}},
+  year = {${year}},
+  publisher = {${publisherText || ''}}
+}`
+
+    case 'endnote':
+      // EndNote format
+      let endnoteStr = '%0 Journal Article\n'
+      authors.value.forEach(author => {
+        endnoteStr += `%A ${author}\n`
+      })
+      endnoteStr += `%T ${titleText}\n`
+      endnoteStr += `%D ${year}\n`
+      if (publisherText) endnoteStr += `%I ${publisherText}\n`
+      return endnoteStr.trim()
+
+    case 'ris':
+      // RIS format (Research Information Systems)
+      let risStr = 'TY  - JOUR\n'
+      authors.value.forEach(author => {
+        risStr += `AU  - ${author}\n`
+      })
+      risStr += `TI  - ${titleText}\n`
+      risStr += `PY  - ${year}\n`
+      if (publisherText) risStr += `PB  - ${publisherText}\n`
+      risStr += 'ER  -'
+      return risStr
 
     default:
       return `${authors.value.join(', ')} (${year}). ${titleText}. ${publisherText}.`
@@ -314,11 +437,14 @@ async function loadItem() {
     try {
       const stats = await statistics.getItemStats(itemId, false) // Don't use cache to get fresh stats
       console.log('Item statistics from API:', stats)
-      itemStats.value = { views: stats.views || 0 }
-      console.log('Views count:', itemStats.value.views)
+      itemStats.value = {
+        views: stats.views || 0,
+        downloads: stats.downloads || 0
+      }
+      console.log('Statistics:', itemStats.value)
     } catch (statsErr) {
       console.warn('Could not load statistics:', statsErr)
-      itemStats.value = { views: 0 }
+      itemStats.value = { views: 0, downloads: 0 }
     }
   } catch (err) {
     console.error('Error loading item:', err)
@@ -508,6 +634,10 @@ onMounted(() => {
                 <span v-if="itemType" class="type-badge" :style="{ backgroundColor: typeColor }">
                   {{ itemType }}
                 </span>
+                <!-- Language Badge -->
+                <span v-if="itemLanguage" class="lang-badge">
+                  {{ itemLanguage }}
+                </span>
               </div>
 
               <!-- Quick File Actions -->
@@ -539,10 +669,31 @@ onMounted(() => {
                   <circle cx="12" cy="7" r="4"/>
                 </svg>
                 <div class="authors-list">
-                  <span v-for="(author, index) in authors" :key="index" class="author-name" role="listitem">
+                  <router-link
+                    v-for="(author, index) in authors"
+                    :key="index"
+                    :to="`/browse?type=author&filter=${encodeURIComponent(author)}`"
+                    class="author-link"
+                    role="listitem"
+                  >
                     {{ author }}<span v-if="index < authors.length - 1" aria-hidden="true">، </span>
-                  </span>
+                  </router-link>
                 </div>
+              </div>
+
+              <!-- Advisor (for thesis items) -->
+              <div v-if="advisor" class="item-advisor">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                  <path d="M22 10v6M2 10l10-5 10 5-10 5z"/>
+                  <path d="M6 12v5c0 2 2 3 6 3s6-1 6-3v-5"/>
+                </svg>
+                <span class="advisor-label">{{ isArabic ? 'المشرف:' : 'Advisor:' }}</span>
+                <router-link
+                  :to="`/browse?type=author&filter=${encodeURIComponent(advisor)}`"
+                  class="advisor-name"
+                >
+                  {{ advisor }}
+                </router-link>
               </div>
 
               <!-- Meta Row -->
@@ -570,17 +721,85 @@ onMounted(() => {
                   </svg>
                   <span>{{ files.length }} {{ files.length === 1 ? (isArabic ? 'ملف' : 'file') : (isArabic ? 'ملفات' : 'files') }}</span>
                 </div>
+                <div class="meta-chip" v-if="extent">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                    <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/>
+                    <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/>
+                  </svg>
+                  <span>{{ extent }}</span>
+                </div>
               </div>
 
-              <!-- Statistics -->
+              <!-- Source & Part Of Row -->
+              <div v-if="source || partOf" class="item-relation-row">
+                <!-- Source -->
+                <div v-if="source" class="relation-card">
+                  <div class="relation-icon">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                      <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/>
+                      <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/>
+                    </svg>
+                  </div>
+                  <div class="relation-content">
+                    <span class="relation-label">{{ $t('item.source') }}</span>
+                    <router-link
+                      :to="`/search?q=${encodeURIComponent(source)}`"
+                      class="relation-link"
+                    >
+                      {{ source }}
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/>
+                        <polyline points="15 3 21 3 21 9"/>
+                        <line x1="10" y1="14" x2="21" y2="3"/>
+                      </svg>
+                    </router-link>
+                  </div>
+                </div>
+                <!-- Part Of -->
+                <div v-if="partOf" class="relation-card">
+                  <div class="relation-icon">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                      <rect x="3" y="3" width="7" height="7"/>
+                      <rect x="14" y="3" width="7" height="7"/>
+                      <rect x="14" y="14" width="7" height="7"/>
+                      <rect x="3" y="14" width="7" height="7"/>
+                    </svg>
+                  </div>
+                  <div class="relation-content">
+                    <span class="relation-label">{{ $t('item.partOf') }}</span>
+                    <router-link
+                      :to="`/search?q=${encodeURIComponent(partOf)}`"
+                      class="relation-link"
+                    >
+                      {{ partOf }}
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/>
+                        <polyline points="15 3 21 3 21 9"/>
+                        <line x1="10" y1="14" x2="21" y2="3"/>
+                      </svg>
+                    </router-link>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Statistics from API -->
               <div class="item-stats">
                 <div class="stat-badge">
                   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
                     <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
                     <circle cx="12" cy="12" r="3"/>
                   </svg>
-                  <span class="stat-value">{{ itemStats.views.toLocaleString('ar-SA') }}</span>
+                  <span class="stat-value">{{ itemStats.views.toLocaleString() }}</span>
                   <span class="stat-label">{{ isArabic ? 'مشاهدة' : 'views' }}</span>
+                </div>
+                <div class="stat-badge">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                    <polyline points="7 10 12 15 17 10"/>
+                    <line x1="12" y1="15" x2="12" y2="3"/>
+                  </svg>
+                  <span class="stat-value">{{ itemStats.downloads.toLocaleString() }}</span>
+                  <span class="stat-label">{{ isArabic ? 'تحميل' : 'downloads' }}</span>
                 </div>
               </div>
 
@@ -1012,6 +1231,20 @@ onMounted(() => {
   box-shadow: 0 4px 12px rgba($black, 0.2);
 }
 
+.lang-badge {
+  position: absolute;
+  bottom: $spacing-3;
+  inset-inline-start: $spacing-3;
+  padding: $spacing-1 $spacing-3;
+  font-size: $font-size-xs;
+  font-weight: $font-weight-medium;
+  color: $white;
+  background-color: rgba($white, 0.25);
+  border-radius: $border-radius-full;
+  backdrop-filter: blur(10px);
+  box-shadow: 0 2px 8px rgba($black, 0.1);
+}
+
 .thumbnail-actions {
   display: flex;
   gap: $spacing-3;
@@ -1098,8 +1331,152 @@ onMounted(() => {
     line-height: $line-height-relaxed;
   }
 
-  .author-name {
+  .author-link {
     font-weight: $font-weight-medium;
+    color: rgba($white, 0.95);
+    text-decoration: none;
+    transition: all 0.2s ease;
+    padding: 2px 6px;
+    border-radius: $border-radius-sm;
+    margin: -2px -6px;
+
+    &:hover {
+      color: $accent-color;
+      background-color: rgba($white, 0.15);
+      text-decoration: underline;
+    }
+  }
+}
+
+.item-advisor {
+  display: flex;
+  align-items: center;
+  gap: $spacing-2;
+  margin-bottom: $spacing-4;
+  padding: $spacing-2 $spacing-4;
+  background-color: rgba($accent-color, 0.2);
+  border-radius: $border-radius-full;
+  width: fit-content;
+
+  @include media-down('md') {
+    margin-left: auto;
+    margin-right: auto;
+  }
+
+  svg {
+    color: $accent-color;
+    flex-shrink: 0;
+  }
+
+  .advisor-label {
+    font-size: $font-size-sm;
+    font-weight: $font-weight-semibold;
+    color: $accent-color;
+  }
+
+  .advisor-name {
+    font-size: $font-size-sm;
+    font-weight: $font-weight-medium;
+    color: $white;
+    text-decoration: none;
+    transition: all 0.2s ease;
+
+    &:hover {
+      color: $accent-light;
+      text-decoration: underline;
+    }
+  }
+}
+
+.item-relation-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: $spacing-3;
+  margin-bottom: $spacing-4;
+
+  @include media-down('md') {
+    flex-direction: column;
+    gap: $spacing-3;
+  }
+}
+
+.relation-card {
+  display: flex;
+  align-items: flex-start;
+  gap: $spacing-3;
+  padding: $spacing-3 $spacing-4;
+  background: linear-gradient(135deg, rgba($white, 0.15) 0%, rgba($white, 0.08) 100%);
+  border-radius: $border-radius-lg;
+  border: 1px solid rgba($white, 0.2);
+  backdrop-filter: blur(10px);
+  transition: all 0.3s ease;
+  flex: 1;
+  min-width: 200px;
+
+  &:hover {
+    background: linear-gradient(135deg, rgba($white, 0.2) 0%, rgba($white, 0.12) 100%);
+    border-color: rgba($accent-color, 0.4);
+    transform: translateY(-2px);
+    box-shadow: 0 8px 20px rgba($black, 0.2);
+  }
+
+  @include media-down('md') {
+    min-width: 100%;
+  }
+}
+
+.relation-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  background-color: rgba($accent-color, 0.2);
+  border-radius: $border-radius-md;
+  color: $accent-color;
+  flex-shrink: 0;
+}
+
+.relation-content {
+  display: flex;
+  flex-direction: column;
+  gap: $spacing-1;
+  min-width: 0;
+  flex: 1;
+}
+
+.relation-label {
+  font-size: $font-size-xs;
+  font-weight: $font-weight-semibold;
+  color: rgba($white, 0.6);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.relation-link {
+  display: inline-flex;
+  align-items: center;
+  gap: $spacing-2;
+  color: $white;
+  text-decoration: none;
+  font-weight: $font-weight-medium;
+  font-size: $font-size-sm;
+  transition: all 0.2s ease;
+  word-break: break-word;
+
+  svg {
+    flex-shrink: 0;
+    opacity: 0.6;
+    transition: all 0.2s ease;
+  }
+
+  &:hover {
+    color: $accent-color;
+
+    svg {
+      opacity: 1;
+      transform: translate(2px, -2px);
+    }
   }
 }
 

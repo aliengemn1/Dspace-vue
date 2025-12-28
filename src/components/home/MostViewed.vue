@@ -1,24 +1,31 @@
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, onUnmounted } from 'vue'
 import ItemCard from '@/components/common/ItemCard.vue'
 import { search, statistics, utils } from '@/services/dspace'
 
 const isLoading = ref(true)
 const items = ref([])
 const error = ref(null)
+let refreshInterval = null
+
+// Auto-refresh interval in milliseconds (60 seconds for most viewed - less frequent due to stats fetching)
+const REFRESH_INTERVAL = 60 * 1000
 
 // Fetch most viewed items from DSpace API
-async function fetchMostViewedItems() {
-  isLoading.value = true
+async function fetchMostViewedItems(showLoading = true) {
+  // Only show loading on initial fetch, not on auto-refresh
+  if (showLoading) {
+    isLoading.value = true
+  }
   error.value = null
 
   try {
-    // Fetch recent items and get their statistics
+    // Fetch recent items and get their statistics (bypass cache for fresh data)
     const response = await search.query({
       page: 0,
       size: 6,
       sort: 'dc.date.accessioned,DESC'
-    })
+    }, false)
 
     if (response._embedded?.searchResult?._embedded?.objects) {
       const apiItems = response._embedded.searchResult._embedded.objects.map(result => {
@@ -52,16 +59,21 @@ async function fetchMostViewedItems() {
           type: utils.getMetadataValue(item.metadata, 'dc.type') || '',
           collection: '',
           thumbnail: thumbnailUrl,
-          views: 0
+          views: 0,
+          downloads: 0
         }
       }).filter(Boolean)
 
-      // Fetch statistics for each item
+      // Fetch statistics for each item (bypass cache for fresh stats)
       const itemsWithStats = await Promise.all(
         apiItems.map(async (item) => {
           try {
-            const stats = await statistics.getItemStats(item.id)
-            return { ...item, views: stats.views || 0 }
+            const stats = await statistics.getItemStats(item.id, false)
+            return {
+              ...item,
+              views: stats.views || 0,
+              downloads: stats.downloads || 0
+            }
           } catch {
             return item
           }
@@ -83,15 +95,49 @@ async function fetchMostViewedItems() {
   }
 }
 
-function formatViews(num) {
-  if (num >= 1000) {
-    return (num / 1000).toFixed(1) + 'K'
+// Start auto-refresh
+function startAutoRefresh() {
+  // Clear any existing interval
+  if (refreshInterval) {
+    clearInterval(refreshInterval)
   }
-  return num.toString()
+
+  // Set up periodic refresh (don't show loading spinner on auto-refresh)
+  refreshInterval = setInterval(() => {
+    fetchMostViewedItems(false)
+  }, REFRESH_INTERVAL)
+}
+
+// Stop auto-refresh
+function stopAutoRefresh() {
+  if (refreshInterval) {
+    clearInterval(refreshInterval)
+    refreshInterval = null
+  }
+}
+
+// Handle visibility change to pause/resume refresh
+function handleVisibilityChange() {
+  if (document.hidden) {
+    stopAutoRefresh()
+  } else {
+    // Refresh immediately when tab becomes visible, then restart auto-refresh
+    fetchMostViewedItems(false)
+    startAutoRefresh()
+  }
 }
 
 onMounted(() => {
-  fetchMostViewedItems()
+  fetchMostViewedItems(true)
+  startAutoRefresh()
+
+  // Listen for visibility changes to optimize resource usage
+  document.addEventListener('visibilitychange', handleVisibilityChange)
+})
+
+onUnmounted(() => {
+  stopAutoRefresh()
+  document.removeEventListener('visibilitychange', handleVisibilityChange)
 })
 </script>
 
@@ -154,16 +200,11 @@ onMounted(() => {
 
       <!-- Items Grid -->
       <div v-else class="items-grid">
-        <div v-for="item in items" :key="item.id" class="viewed-item-card">
-          <ItemCard :item="item" />
-          <div class="views-badge">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
-              <circle cx="12" cy="12" r="3"/>
-            </svg>
-            <span>{{ formatViews(item.views) }}</span>
-          </div>
-        </div>
+        <ItemCard
+          v-for="item in items"
+          :key="item.id"
+          :item="item"
+        />
       </div>
     </div>
   </section>
@@ -240,30 +281,6 @@ onMounted(() => {
 
   @include media-down('sm') {
     grid-template-columns: 1fr;
-  }
-}
-
-.viewed-item-card {
-  position: relative;
-}
-
-.views-badge {
-  position: absolute;
-  top: $spacing-3;
-  inset-inline-end: $spacing-3;
-  display: flex;
-  align-items: center;
-  gap: $spacing-1;
-  padding: $spacing-1 $spacing-2;
-  background-color: rgba($black, 0.7);
-  color: $white;
-  font-size: $font-size-xs;
-  font-weight: $font-weight-medium;
-  border-radius: $border-radius-full;
-  z-index: 10;
-
-  svg {
-    opacity: 0.9;
   }
 }
 

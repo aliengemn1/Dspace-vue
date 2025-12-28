@@ -4,7 +4,7 @@ import { useRoute, useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import Breadcrumb from '@/components/common/Breadcrumb.vue'
 import MediaViewer from '@/components/common/MediaViewer.vue'
-import { items, bitstreams, utils } from '@/services/dspace'
+import { items, bitstreams, utils, statistics } from '@/services/dspace'
 
 const route = useRoute()
 const router = useRouter()
@@ -20,6 +20,8 @@ const error = ref(null)
 const showCitationCopied = ref(false)
 const showMediaViewer = ref(false)
 const selectedFile = ref(null)
+const thumbnailUrl = ref(null)
+const itemStats = ref({ views: 0, downloads: 0 })
 
 const breadcrumbItems = computed(() => [
   { label: t('nav.home'), path: '/' },
@@ -88,12 +90,16 @@ const allMetadata = computed(() => {
 
   // Dates
   addField(categories.dates.fields, 'dc.date.issued', 'تاريخ النشر', 'Date Issued', metadataMap)
+  addField(categories.dates.fields, 'dc.date.issuedhijri', 'التاريخ الهجري', 'Hijri Date', metadataMap)
+  addField(categories.dates.fields, 'dc.date.hijri', 'التاريخ الهجري', 'Hijri Date', metadataMap)
   addField(categories.dates.fields, 'dc.date.created', 'تاريخ الإنشاء', 'Date Created', metadataMap)
   addField(categories.dates.fields, 'dc.date.submitted', 'تاريخ التقديم', 'Date Submitted', metadataMap)
   addField(categories.dates.fields, 'dc.date.accessioned', 'تاريخ الإيداع', 'Date Accessioned', metadataMap)
   addField(categories.dates.fields, 'dc.date.available', 'تاريخ الإتاحة', 'Date Available', metadataMap)
 
   // Identifiers
+  addField(categories.identifiers.fields, 'dc.identifier.callnumber', 'رقم الطلب', 'Call Number', metadataMap)
+  addField(categories.identifiers.fields, 'dc.identifier.callnum', 'رقم الطلب', 'Call Number', metadataMap)
   addField(categories.identifiers.fields, 'dc.identifier.uri', 'الرابط الدائم', 'Permanent URI', metadataMap)
   addField(categories.identifiers.fields, 'dc.identifier.isbn', 'ISBN', 'ISBN', metadataMap)
   addField(categories.identifiers.fields, 'dc.identifier.issn', 'ISSN', 'ISSN', metadataMap)
@@ -104,7 +110,11 @@ const allMetadata = computed(() => {
   // Description
   addField(categories.description.fields, 'dc.description.abstract', 'المستخلص', 'Abstract', metadataMap)
   addField(categories.description.fields, 'dc.description', 'الوصف', 'Description', metadataMap)
+  addField(categories.description.fields, 'dc.description.extent', 'الحجم/عدد الصفحات', 'Extent/Pages', metadataMap)
+  addField(categories.description.fields, 'dc.description.theses', 'معلومات الرسالة', 'Thesis Info', metadataMap)
+  addField(categories.description.fields, 'dc.description.localnote', 'ملاحظات محلية', 'Local Notes', metadataMap)
   addField(categories.description.fields, 'dc.subject', 'الموضوعات', 'Subjects', metadataMap, true)
+  addField(categories.description.fields, 'dc.subject.isi', 'تصنيف ISI', 'ISI Subject', metadataMap)
   addField(categories.description.fields, 'dc.coverage.spatial', 'التغطية المكانية', 'Spatial Coverage', metadataMap)
   addField(categories.description.fields, 'dc.coverage.temporal', 'التغطية الزمنية', 'Temporal Coverage', metadataMap)
 
@@ -113,6 +123,9 @@ const allMetadata = computed(() => {
   addField(categories.rights.fields, 'dc.rights.uri', 'رابط الحقوق', 'Rights URI', metadataMap)
   addField(categories.rights.fields, 'dc.rights.holder', 'صاحب الحقوق', 'Rights Holder', metadataMap)
   addField(categories.rights.fields, 'dc.publisher', 'الناشر', 'Publisher', metadataMap)
+  addField(categories.rights.fields, 'dc.publisher.place', 'مكان النشر', 'Place of Publication', metadataMap)
+  addField(categories.rights.fields, 'dc.publisher.city', 'المدينة', 'City', metadataMap)
+  addField(categories.rights.fields, 'dc.publisher.country', 'الدولة', 'Country', metadataMap)
 
   // Other fields
   addField(categories.other.fields, 'dc.source', 'المصدر', 'Source', metadataMap)
@@ -158,6 +171,31 @@ const itemType = computed(() => {
   return utils.getMetadataValue(item.value.metadata, 'dc.type') || ''
 })
 
+const itemLanguage = computed(() => {
+  if (!item.value?.metadata) return ''
+  const lang = utils.getMetadataValue(item.value.metadata, 'dc.language.iso') || ''
+  // Map common language codes to readable names
+  const langMap = {
+    'ar': 'العربية',
+    'en': 'English',
+    'en_US': 'English',
+    'ar_SA': 'العربية',
+    'fr': 'Français',
+    'de': 'Deutsch'
+  }
+  return langMap[lang] || lang
+})
+
+const advisor = computed(() => {
+  if (!item.value?.metadata) return ''
+  return utils.getMetadataValue(item.value.metadata, 'dc.contributor.advisor') || ''
+})
+
+const abstract = computed(() => {
+  if (!item.value?.metadata) return ''
+  return utils.getMetadataValue(item.value.metadata, 'dc.description.abstract') || ''
+})
+
 const typeColors = {
   'رسالة ماجستير': '#006C35',
   'رسالة دكتوراه': '#1B4D3E',
@@ -192,6 +230,21 @@ async function loadItem() {
 
       if (bundlesResponse._embedded?.bundles) {
         for (const bundle of bundlesResponse._embedded.bundles) {
+          // Get thumbnail from THUMBNAIL bundle
+          if (bundle.name === 'THUMBNAIL') {
+            const bundleId = bundle.uuid || bundle.id
+            try {
+              const thumbResponse = await bitstreams.getByBundle(bundleId)
+              if (thumbResponse._embedded?.bitstreams?.length > 0) {
+                const thumb = thumbResponse._embedded.bitstreams[0]
+                thumbnailUrl.value = bitstreams.getContentUrl(thumb.uuid || thumb.id)
+              }
+            } catch (e) {
+              console.warn('Could not load thumbnail from bundle:', e)
+            }
+          }
+
+          // Get files from ORIGINAL bundle
           if (bundle.name === 'ORIGINAL') {
             const bundleId = bundle.uuid || bundle.id
             const bitstreamResponse = await bitstreams.getByBundle(bundleId)
@@ -239,6 +292,22 @@ async function loadItem() {
     } catch (bundleErr) {
       console.warn('Could not load bundles:', bundleErr)
       // Continue without files - item can still be displayed
+    }
+
+    // Fallback: Try to get thumbnail from item's _links if not found in bundle
+    if (!thumbnailUrl.value && itemData._links?.thumbnail?.href) {
+      thumbnailUrl.value = itemData._links.thumbnail.href
+    }
+
+    // Get item statistics from API
+    try {
+      const stats = await statistics.getItemStats(itemId, false)
+      itemStats.value = {
+        views: stats.views || 0,
+        downloads: stats.downloads || 0
+      }
+    } catch (statsErr) {
+      console.warn('Could not load statistics:', statsErr)
     }
   } catch (err) {
     console.error('Error loading item:', err)
@@ -351,43 +420,101 @@ onMounted(() => {
       <!-- Header -->
       <div class="item-header">
         <div class="container">
-          <div class="header-content">
-            <div class="header-top">
-              <span class="item-type-badge" :style="{ backgroundColor: typeColor }">
-                {{ itemType }}
-              </span>
-              <button class="btn btn-secondary btn-sm" @click="goToSimpleView">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                  <polyline points="15 18 9 12 15 6"/>
-                </svg>
-                {{ isArabic ? 'العرض البسيط' : 'Simple View' }}
-              </button>
+          <div class="header-layout">
+            <!-- Thumbnail -->
+            <div class="header-thumbnail" v-if="thumbnailUrl">
+              <img :src="thumbnailUrl" :alt="title" class="thumbnail-image" />
             </div>
-            <h1 class="item-title">{{ title }}</h1>
-            <div class="item-meta">
-              <span v-if="authors.length > 0" class="meta-item">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                  <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
-                  <circle cx="12" cy="7" r="4"/>
-                </svg>
-                {{ authors.join(isArabic ? '، ' : ', ') }}
-              </span>
-              <span v-if="itemDate" class="meta-item">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                  <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
-                  <line x1="16" y1="2" x2="16" y2="6"/>
-                  <line x1="8" y1="2" x2="8" y2="6"/>
-                  <line x1="3" y1="10" x2="21" y2="10"/>
-                </svg>
-                {{ itemDate }}
-              </span>
-              <span v-if="publisher" class="meta-item">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                  <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
-                  <polyline points="9 22 9 12 15 12 15 22"/>
-                </svg>
-                {{ publisher }}
-              </span>
+
+            <div class="header-content">
+              <div class="header-top">
+                <div class="header-badges">
+                  <span class="item-type-badge" :style="{ backgroundColor: typeColor }">
+                    {{ itemType }}
+                  </span>
+                  <span v-if="itemLanguage" class="item-lang-badge">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                      <circle cx="12" cy="12" r="10"/>
+                      <line x1="2" y1="12" x2="22" y2="12"/>
+                      <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/>
+                    </svg>
+                    {{ itemLanguage }}
+                  </span>
+                </div>
+                <button class="btn btn-secondary btn-sm" @click="goToSimpleView">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <polyline points="15 18 9 12 15 6"/>
+                  </svg>
+                  {{ isArabic ? 'العرض البسيط' : 'Simple View' }}
+                </button>
+              </div>
+              <h1 class="item-title">{{ title }}</h1>
+              <div class="item-meta">
+                <span v-if="authors.length > 0" class="meta-item">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+                    <circle cx="12" cy="7" r="4"/>
+                  </svg>
+                  {{ authors.join(isArabic ? '، ' : ', ') }}
+                </span>
+                <span v-if="itemDate" class="meta-item">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
+                    <line x1="16" y1="2" x2="16" y2="6"/>
+                    <line x1="8" y1="2" x2="8" y2="6"/>
+                    <line x1="3" y1="10" x2="21" y2="10"/>
+                  </svg>
+                  {{ itemDate }}
+                </span>
+                <span v-if="publisher" class="meta-item">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
+                    <polyline points="9 22 9 12 15 12 15 22"/>
+                  </svg>
+                  {{ publisher }}
+                </span>
+                <span v-if="advisor" class="meta-item advisor-item">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M22 10v6M2 10l10-5 10 5-10 5z"/>
+                    <path d="M6 12v5c0 2 2 3 6 3s6-1 6-3v-5"/>
+                  </svg>
+                  <span class="advisor-label">{{ isArabic ? 'المشرف:' : 'Advisor:' }}</span> {{ advisor }}
+                </span>
+              </div>
+
+              <!-- Abstract Preview -->
+              <div v-if="abstract" class="abstract-preview">
+                <p>{{ abstract.length > 300 ? abstract.substring(0, 300) + '...' : abstract }}</p>
+              </div>
+
+              <!-- Statistics from API -->
+              <div class="item-stats">
+                <div class="stat-badge">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+                    <circle cx="12" cy="12" r="3"/>
+                  </svg>
+                  <span class="stat-value">{{ itemStats.views.toLocaleString() }}</span>
+                  <span class="stat-label">{{ isArabic ? 'مشاهدة' : 'views' }}</span>
+                </div>
+                <div class="stat-badge">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                    <polyline points="7 10 12 15 17 10"/>
+                    <line x1="12" y1="15" x2="12" y2="3"/>
+                  </svg>
+                  <span class="stat-value">{{ itemStats.downloads.toLocaleString() }}</span>
+                  <span class="stat-label">{{ isArabic ? 'تحميل' : 'downloads' }}</span>
+                </div>
+                <div class="stat-badge" v-if="files.length > 0">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                    <polyline points="14 2 14 8 20 8"/>
+                  </svg>
+                  <span class="stat-value">{{ files.length }}</span>
+                  <span class="stat-label">{{ isArabic ? 'ملفات' : 'files' }}</span>
+                </div>
+              </div>
             </div>
           </div>
         </div>
@@ -638,13 +765,55 @@ onMounted(() => {
 
 // Header
 .item-header {
-  background-color: $white;
+  background: linear-gradient(135deg, $primary-darker 0%, $primary-dark 50%, $primary-color 100%);
   padding: $spacing-8 0;
-  border-bottom: 1px solid $border-color-light;
+  color: $white;
+  position: relative;
+
+  &::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(ellipse at 20% 80%, rgba($accent-color, 0.15) 0%, transparent 50%);
+  }
+}
+
+.header-layout {
+  position: relative;
+  display: flex;
+  gap: $spacing-6;
+  align-items: flex-start;
+
+  @include media-down('md') {
+    flex-direction: column;
+    align-items: center;
+  }
+}
+
+.header-thumbnail {
+  flex-shrink: 0;
+
+  .thumbnail-image {
+    width: 180px;
+    height: auto;
+    max-height: 250px;
+    object-fit: contain;
+    background-color: $white;
+    border-radius: $border-radius-lg;
+    box-shadow: 0 10px 30px rgba($black, 0.3);
+    padding: $spacing-2;
+  }
+
+  @include media-down('md') {
+    .thumbnail-image {
+      width: 150px;
+    }
+  }
 }
 
 .header-content {
-  max-width: 900px;
+  flex: 1;
+  min-width: 0;
 }
 
 .header-top {
@@ -652,6 +821,30 @@ onMounted(() => {
   align-items: center;
   justify-content: space-between;
   margin-bottom: $spacing-4;
+}
+
+.header-badges {
+  display: flex;
+  align-items: center;
+  gap: $spacing-2;
+  flex-wrap: wrap;
+}
+
+.item-lang-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: $spacing-1;
+  padding: $spacing-2 $spacing-3;
+  font-size: $font-size-sm;
+  font-weight: $font-weight-medium;
+  color: $white;
+  background-color: rgba($white, 0.2);
+  border-radius: $border-radius-full;
+  backdrop-filter: blur(10px);
+
+  svg {
+    opacity: 0.8;
+  }
 }
 
 .item-type-badge {
@@ -666,12 +859,13 @@ onMounted(() => {
 .item-title {
   font-size: 1.75rem;
   font-weight: $font-weight-bold;
-  color: $text-primary;
+  color: $accent-color;
   line-height: $line-height-tight;
   margin-bottom: $spacing-4;
 
   @include media-down('md') {
     font-size: 1.5rem;
+    text-align: center;
   }
 }
 
@@ -679,17 +873,81 @@ onMounted(() => {
   display: flex;
   flex-wrap: wrap;
   gap: $spacing-4;
+  margin-bottom: $spacing-4;
+
+  @include media-down('md') {
+    justify-content: center;
+  }
 }
 
 .meta-item {
   display: flex;
   align-items: center;
   gap: $spacing-2;
-  color: $text-secondary;
+  color: rgba($white, 0.9);
   font-size: $font-size-sm;
 
   svg {
-    color: $primary-color;
+    color: rgba($white, 0.7);
+  }
+
+  &.advisor-item {
+    background-color: rgba($accent-color, 0.2);
+    padding: $spacing-1 $spacing-3;
+    border-radius: $border-radius-full;
+
+    .advisor-label {
+      font-weight: $font-weight-semibold;
+      color: $accent-color;
+    }
+  }
+}
+
+.abstract-preview {
+  margin-bottom: $spacing-4;
+  padding: $spacing-4;
+  background-color: rgba($white, 0.1);
+  border-radius: $border-radius-lg;
+  border-inline-start: 3px solid $accent-color;
+
+  p {
+    font-size: $font-size-sm;
+    color: rgba($white, 0.9);
+    line-height: $line-height-relaxed;
+    margin: 0;
+  }
+}
+
+.item-stats {
+  display: flex;
+  flex-wrap: wrap;
+  gap: $spacing-3;
+
+  @include media-down('md') {
+    justify-content: center;
+  }
+}
+
+.stat-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: $spacing-2;
+  padding: $spacing-2 $spacing-4;
+  background-color: rgba($white, 0.15);
+  border-radius: $border-radius-full;
+  font-size: $font-size-sm;
+
+  svg {
+    opacity: 0.8;
+  }
+
+  .stat-value {
+    font-weight: $font-weight-bold;
+    color: $white;
+  }
+
+  .stat-label {
+    color: rgba($white, 0.7);
   }
 }
 

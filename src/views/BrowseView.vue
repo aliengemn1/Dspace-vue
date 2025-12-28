@@ -23,19 +23,19 @@ const viewMode = ref('entries') // 'entries' or 'results'
 const selectedSort = ref('count_desc')
 
 const sortOptions = computed(() => [
-  { value: 'name_asc', label: locale.value === 'ar' ? 'الاسم (أ-ي)' : 'Name (A-Z)' },
-  { value: 'name_desc', label: locale.value === 'ar' ? 'الاسم (ي-أ)' : 'Name (Z-A)' },
-  { value: 'count_desc', label: locale.value === 'ar' ? 'الأكثر عناصر' : 'Most items' },
-  { value: 'count_asc', label: locale.value === 'ar' ? 'الأقل عناصر' : 'Least items' }
+  { value: 'name_asc', label: t('search.titleAZ') },
+  { value: 'name_desc', label: t('search.titleZA') },
+  { value: 'count_desc', label: t('browse.mostItems') },
+  { value: 'count_asc', label: t('browse.leastItems') }
 ])
 
 // Browse types - static list
 const browseTypes = computed(() => [
-  { id: 'author', label: t('browse.byAuthor'), icon: 'users', description: locale.value === 'ar' ? 'تصفح حسب المؤلفين' : 'Browse by authors' },
-  { id: 'subject', label: t('browse.bySubject'), icon: 'tag', description: locale.value === 'ar' ? 'تصفح حسب الموضوعات' : 'Browse by subjects' },
-  { id: 'dateissued', label: t('browse.byDate'), icon: 'calendar', description: locale.value === 'ar' ? 'تصفح حسب التاريخ' : 'Browse by date' },
-  { id: 'type', label: t('browse.byType'), icon: 'layers', description: locale.value === 'ar' ? 'تصفح حسب النوع' : 'Browse by type' },
-  { id: 'publisher', label: t('browse.byPublisher'), icon: 'building', description: locale.value === 'ar' ? 'تصفح حسب الناشرين' : 'Browse by publishers' }
+  { id: 'author', label: t('browse.byAuthor'), icon: 'users', description: t('browse.byAuthorDesc') },
+  { id: 'subject', label: t('browse.bySubject'), icon: 'tag', description: t('browse.bySubjectDesc') },
+  { id: 'dateissued', label: t('browse.byDate'), icon: 'calendar', description: t('browse.byDateDesc') },
+  { id: 'type', label: t('browse.byType'), icon: 'layers', description: t('browse.byTypeDesc') },
+  { id: 'publisher', label: t('browse.byPublisher'), icon: 'building', description: t('browse.byPublisherDesc') }
 ])
 
 const icons = {
@@ -121,9 +121,7 @@ async function loadEntries() {
     entries.value = []
     totalPages.value = 1
     totalResults.value = 0
-    errorMessage.value = locale.value === 'ar'
-      ? 'فشل تحميل البيانات. قد لا يكون هذا النوع من التصفح متاحًا.'
-      : 'Failed to load data. This browse type may not be available.'
+    errorMessage.value = t('browse.loadFailed')
   } finally {
     isLoading.value = false
     // Apply initial sort if we have entries
@@ -202,9 +200,7 @@ async function loadItems(filterValue) {
     searchResults.value = []
     totalResults.value = 0
     totalPages.value = 1
-    errorMessage.value = locale.value === 'ar'
-      ? 'فشل تحميل العناصر. يرجى المحاولة مرة أخرى.'
-      : 'Failed to load items. Please try again.'
+    errorMessage.value = t('browse.loadItemsFailed')
   } finally {
     isLoading.value = false
   }
@@ -313,7 +309,7 @@ watch(() => route.query, (newQuery) => {
       <div class="container">
         <div class="header-content">
           <h1 class="page-title">{{ $t('browse.title') }}</h1>
-          <p class="page-description">{{ locale === 'ar' ? 'استكشف محتويات المكتبة الرقمية' : 'Explore digital library contents' }}</p>
+          <p class="page-description">{{ $t('browse.subtitle') }}</p>
         </div>
 
         <!-- Browse Type Tabs -->
@@ -348,7 +344,7 @@ watch(() => route.query, (newQuery) => {
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <polyline points="15 18 9 12 15 6"/>
               </svg>
-              {{ locale === 'ar' ? 'العودة للقائمة' : 'Back to list' }}
+              {{ $t('common.backToList') }}
             </button>
 
             <div class="results-info">
@@ -356,7 +352,7 @@ watch(() => route.query, (newQuery) => {
                 {{ totalResults }} {{ currentBrowseType.label }}
               </span>
               <span v-else class="results-count">
-                <strong>{{ searchQuery }}</strong> - {{ totalResults }} {{ locale === 'ar' ? 'نتيجة' : 'results' }}
+                <strong>{{ searchQuery }}</strong> - {{ totalResults }} {{ $t('browse.results') }}
               </span>
             </div>
           </div>
@@ -364,7 +360,7 @@ watch(() => route.query, (newQuery) => {
           <div class="controls-end">
             <!-- Sort (only for entries view) -->
             <div v-if="viewMode === 'entries'" class="sort-wrapper">
-              <label for="sort-select">{{ locale === 'ar' ? 'ترتيب:' : 'Sort:' }}</label>
+              <label for="sort-select">{{ $t('browse.sort') }}</label>
               <select id="sort-select" class="sort-select" :value="selectedSort" @change="handleSortChange">
                 <option v-for="option in sortOptions" :key="option.value" :value="option.value">
                   {{ option.label }}
@@ -389,10 +385,10 @@ watch(() => route.query, (newQuery) => {
               <line x1="12" y1="16" x2="12.01" y2="16"/>
             </svg>
           </div>
-          <h3>{{ locale === 'ar' ? 'حدث خطأ' : 'An error occurred' }}</h3>
+          <h3>{{ $t('common.error') }}</h3>
           <p>{{ errorMessage }}</p>
           <button class="btn btn-primary" @click="viewMode === 'entries' ? loadEntries() : loadItems(searchQuery)">
-            {{ locale === 'ar' ? 'إعادة المحاولة' : 'Try again' }}
+            {{ $t('common.tryAgain') }}
           </button>
         </div>
 
@@ -404,8 +400,8 @@ watch(() => route.query, (newQuery) => {
               <polyline points="14 2 14 8 20 8"/>
             </svg>
           </div>
-          <h3>{{ locale === 'ar' ? 'لا توجد بيانات' : 'No data found' }}</h3>
-          <p>{{ locale === 'ar' ? 'لم يتم العثور على ' + currentBrowseType.label + ' في هذا التصنيف' : 'No ' + currentBrowseType.label + ' found in this category' }}</p>
+          <h3>{{ $t('common.noDataFound') }}</h3>
+          <p>{{ $t('browse.noDataInCategory', { type: currentBrowseType.label }) }}</p>
         </div>
 
         <!-- Entries View -->
@@ -419,15 +415,15 @@ watch(() => route.query, (newQuery) => {
             >
               <div class="entry-content">
                 <span class="entry-value">{{ entry.value }}</span>
-                <span class="entry-description" v-if="browseType === 'author'">{{ locale === 'ar' ? 'مؤلف' : 'Author' }}</span>
-                <span class="entry-description" v-else-if="browseType === 'subject'">{{ locale === 'ar' ? 'موضوع' : 'Subject' }}</span>
-                <span class="entry-description" v-else-if="browseType === 'dateissued'">{{ locale === 'ar' ? 'سنة النشر' : 'Year' }}</span>
-                <span class="entry-description" v-else-if="browseType === 'type'">{{ locale === 'ar' ? 'نوع المحتوى' : 'Type' }}</span>
-                <span class="entry-description" v-else-if="browseType === 'publisher'">{{ locale === 'ar' ? 'ناشر' : 'Publisher' }}</span>
+                <span class="entry-description" v-if="browseType === 'author'">{{ $t('browse.author') }}</span>
+                <span class="entry-description" v-else-if="browseType === 'subject'">{{ $t('browse.subject') }}</span>
+                <span class="entry-description" v-else-if="browseType === 'dateissued'">{{ $t('browse.year') }}</span>
+                <span class="entry-description" v-else-if="browseType === 'type'">{{ $t('browse.contentType') }}</span>
+                <span class="entry-description" v-else-if="browseType === 'publisher'">{{ $t('browse.publisher') }}</span>
               </div>
               <div class="entry-count-wrapper">
                 <span class="entry-count">{{ formatCount(entry.count) }}</span>
-                <span class="count-label">{{ locale === 'ar' ? 'عنصر' : 'items' }}</span>
+                <span class="count-label">{{ $t('browse.itemLabel') }}</span>
               </div>
               <div class="entry-arrow">
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -448,9 +444,9 @@ watch(() => route.query, (newQuery) => {
                 <line x1="8" y1="11" x2="14" y2="11"/>
               </svg>
             </div>
-            <h3>{{ locale === 'ar' ? 'لا توجد نتائج' : 'No results found' }}</h3>
-            <p>{{ locale === 'ar' ? 'لم يتم العثور على عناصر مطابقة لـ "' + searchQuery + '"' : 'No items matching "' + searchQuery + '" were found' }}</p>
-            <button class="btn btn-primary" @click="backToEntries">{{ locale === 'ar' ? 'العودة للتصفح' : 'Back to browse' }}</button>
+            <h3>{{ $t('common.noResultsFound') }}</h3>
+            <p>{{ $t('common.noMatchingItems', { query: searchQuery }) }}</p>
+            <button class="btn btn-primary" @click="backToEntries">{{ $t('common.backToBrowse') }}</button>
           </div>
 
           <div v-else class="results-grid">

@@ -1,19 +1,27 @@
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, onUnmounted } from 'vue'
 import ItemCard from '@/components/common/ItemCard.vue'
-import { items as itemsApi, utils } from '@/services/dspace'
+import { items as itemsApi, statistics, utils } from '@/services/dspace'
 
 const isLoading = ref(true)
 const items = ref([])
 const error = ref(null)
+let refreshInterval = null
+
+// Auto-refresh interval in milliseconds (30 seconds)
+const REFRESH_INTERVAL = 30 * 1000
 
 // Fetch recent items from DSpace API
-async function fetchRecentItems() {
-  isLoading.value = true
+async function fetchRecentItems(showLoading = true) {
+  // Only show loading on initial fetch, not on auto-refresh
+  if (showLoading) {
+    isLoading.value = true
+  }
   error.value = null
 
   try {
-    const response = await itemsApi.getRecent(6)
+    // Pass useCache = false to always get fresh data
+    const response = await itemsApi.getRecent(6, false)
     if (response._embedded?.searchResult?._embedded?.objects) {
       const apiItems = response._embedded.searchResult._embedded.objects.map(result => {
         const item = result._embedded?.indexableObject
@@ -45,11 +53,29 @@ async function fetchRecentItems() {
           date: utils.getMetadataValue(item.metadata, 'dc.date.issued')?.substring(0, 4) || '',
           type: utils.getMetadataValue(item.metadata, 'dc.type') || '',
           collection: '',
-          thumbnail: thumbnailUrl
+          thumbnail: thumbnailUrl,
+          views: 0,
+          downloads: 0
         }
       }).filter(Boolean)
 
-      items.value = apiItems
+      // Fetch statistics for each item from API
+      const itemsWithStats = await Promise.all(
+        apiItems.map(async (item) => {
+          try {
+            const stats = await statistics.getItemStats(item.id, false)
+            return {
+              ...item,
+              views: stats.views || 0,
+              downloads: stats.downloads || 0
+            }
+          } catch {
+            return item
+          }
+        })
+      )
+
+      items.value = itemsWithStats
     } else {
       items.value = []
     }
@@ -62,8 +88,49 @@ async function fetchRecentItems() {
   }
 }
 
+// Start auto-refresh
+function startAutoRefresh() {
+  // Clear any existing interval
+  if (refreshInterval) {
+    clearInterval(refreshInterval)
+  }
+
+  // Set up periodic refresh (don't show loading spinner on auto-refresh)
+  refreshInterval = setInterval(() => {
+    fetchRecentItems(false)
+  }, REFRESH_INTERVAL)
+}
+
+// Stop auto-refresh
+function stopAutoRefresh() {
+  if (refreshInterval) {
+    clearInterval(refreshInterval)
+    refreshInterval = null
+  }
+}
+
+// Handle visibility change to pause/resume refresh
+function handleVisibilityChange() {
+  if (document.hidden) {
+    stopAutoRefresh()
+  } else {
+    // Refresh immediately when tab becomes visible, then restart auto-refresh
+    fetchRecentItems(false)
+    startAutoRefresh()
+  }
+}
+
 onMounted(() => {
-  fetchRecentItems()
+  fetchRecentItems(true)
+  startAutoRefresh()
+
+  // Listen for visibility changes to optimize resource usage
+  document.addEventListener('visibilitychange', handleVisibilityChange)
+})
+
+onUnmounted(() => {
+  stopAutoRefresh()
+  document.removeEventListener('visibilitychange', handleVisibilityChange)
 })
 </script>
 

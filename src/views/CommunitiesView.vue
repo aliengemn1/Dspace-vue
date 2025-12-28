@@ -83,7 +83,7 @@ onMounted(() => {
       <div class="container">
         <h1 class="page-title">{{ $t('browse.communities') }}</h1>
         <p class="page-description">
-          {{ locale === 'ar' ? 'استعرض مجتمعات المستودع الرقمي والوصول إلى مجموعاتها المختلفة' : 'Browse digital repository communities and access their collections' }}
+          {{ $t('community.browseDescription') }}
         </p>
       </div>
     </div>

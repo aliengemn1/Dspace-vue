@@ -84,6 +84,12 @@ const selectedSearchField = ref('*') // DSpace metadata field for search
 // Selected filters - dynamic based on available facets
 const selectedFilters = ref({})
 
+// Flag to prevent watcher from triggering search during programmatic navigation
+const isNavigatingProgrammatically = ref(false)
+
+// Counter to track navigation operations and prevent race conditions
+const navigationCounter = ref(0)
+
 // Facets from DSpace API - will be populated dynamically
 const availableFacets = ref({})
 
@@ -362,6 +368,11 @@ async function performSearch() {
     if (query && selectedSearchField.value && selectedSearchField.value !== '*') {
       // Use DSpace field-specific query syntax
       queryString = `${selectedSearchField.value}:${queryString}`
+    } else if (query && selectedSearchField.value === '*') {
+      // For general search, search across multiple important fields including abstract
+      // This ensures abstract content is included in search results
+      const escapedQuery = query.replace(/['"]/g, '\\"')
+      queryString = `(dc.title:"${escapedQuery}" OR dc.contributor.author:"${escapedQuery}" OR dc.subject:"${escapedQuery}" OR dc.description.abstract:"${escapedQuery}" OR dc.description:"${escapedQuery}" OR dc.publisher:"${escapedQuery}" OR "${escapedQuery}")`
     }
 
     // Call DSpace search API with facets
@@ -415,7 +426,7 @@ function handleSortChange(event) {
   performSearch()
 }
 
-function toggleFilter(facetName, value) {
+async function toggleFilter(facetName, value) {
   console.log('=== TOGGLE FILTER CALLED ===')
   console.log('Facet:', facetName, 'Value:', value)
 
@@ -444,12 +455,50 @@ function toggleFilter(facetName, value) {
   // Clear search cache to ensure fresh results with filters
   cacheControl.clearSearchCache()
 
-  // Update URL with filter parameters (like DSpace Angular)
-  updateUrlWithFilters()
+  // Increment counter and set flag to prevent watcher interference
+  navigationCounter.value++
+  const currentNavigation = navigationCounter.value
+  isNavigatingProgrammatically.value = true
 
-  // Trigger search with new filter immediately
-  console.log('Calling performSearch...')
-  performSearch()
+  // Update URL with filter parameters (like DSpace Angular)
+  // Use replace instead of push to avoid adding to history for each filter change
+  const query = { ...route.query }
+
+  // Remove old filter params
+  Object.keys(query).forEach(key => {
+    if (key.startsWith('f.')) {
+      delete query[key]
+    }
+  })
+
+  // Add current filters to URL params
+  Object.entries(selectedFilters.value).forEach(([fname, vals]) => {
+    if (Array.isArray(vals) && vals.length > 0) {
+      query[`f.${fname}`] = vals.map(v => `${v},equals`)
+    }
+  })
+
+  query.page = '1'
+
+  // Trigger search FIRST with current filters before URL update
+  // This ensures the search uses the correct selectedFilters.value
+  console.log('Calling performSearch with filters:', JSON.stringify(selectedFilters.value))
+  await performSearch()
+
+  // Then update URL (watcher will be skipped due to flag)
+  try {
+    await router.replace({ query })
+  } catch (err) {
+    // Ignore navigation duplicated errors
+    if (err.name !== 'NavigationDuplicated') {
+      console.error('Router replace error:', err)
+    }
+  }
+
+  // Reset flag only if this is still the current navigation
+  if (currentNavigation === navigationCounter.value) {
+    isNavigatingProgrammatically.value = false
+  }
 }
 
 // Update URL with current filters (DSpace Angular style)
@@ -478,11 +527,40 @@ function updateUrlWithFilters() {
   router.push({ query })
 }
 
-function clearFilters() {
+async function clearFilters() {
   selectedFilters.value = {}
+  currentPage.value = 1
   cacheControl.clearSearchCache()
-  updateUrlWithFilters()
-  performSearch()
+
+  // Increment counter and set flag to prevent watcher interference
+  navigationCounter.value++
+  const currentNavigation = navigationCounter.value
+  isNavigatingProgrammatically.value = true
+
+  // Trigger search FIRST with cleared filters
+  await performSearch()
+
+  // Remove filter params from URL
+  const query = { ...route.query }
+  Object.keys(query).forEach(key => {
+    if (key.startsWith('f.')) {
+      delete query[key]
+    }
+  })
+  query.page = '1'
+
+  try {
+    await router.replace({ query })
+  } catch (err) {
+    if (err.name !== 'NavigationDuplicated') {
+      console.error('Router replace error:', err)
+    }
+  }
+
+  // Reset flag only if this is still the current navigation
+  if (currentNavigation === navigationCounter.value) {
+    isNavigatingProgrammatically.value = false
+  }
 }
 
 // Load filters from URL query params (on page load or URL change)
@@ -743,9 +821,29 @@ onMounted(async () => {
 })
 
 watch(() => route.query, (newQuery, oldQuery) => {
-  // Check if the change was triggered by our own navigation
-  const filterChanged = Object.keys(newQuery).some(k => k.startsWith('f.')) ||
-                        Object.keys(oldQuery || {}).some(k => k.startsWith('f.'))
+  // Skip if we're navigating programmatically (from toggleFilter or clearFilters)
+  if (isNavigatingProgrammatically.value) {
+    console.log('Skipping watcher - programmatic navigation')
+    return
+  }
+
+  // Check if the query or field changed (not just filters)
+  const queryChanged = newQuery.q !== (oldQuery?.q || '')
+  const fieldChanged = newQuery.field !== (oldQuery?.field || '')
+
+  // Check if filter params changed
+  const newFilterKeys = Object.keys(newQuery).filter(k => k.startsWith('f.'))
+  const oldFilterKeys = Object.keys(oldQuery || {}).filter(k => k.startsWith('f.'))
+  const filterChanged = newFilterKeys.length !== oldFilterKeys.length ||
+                        newFilterKeys.some(k => newQuery[k] !== oldQuery?.[k])
+
+  // Only proceed if something actually changed
+  if (!queryChanged && !fieldChanged && !filterChanged) {
+    console.log('Skipping watcher - no relevant changes')
+    return
+  }
+
+  console.log('Watcher triggered - query:', queryChanged, 'field:', fieldChanged, 'filter:', filterChanged)
 
   if (newQuery.q !== searchQuery.value) {
     searchQuery.value = newQuery.q || '*'
@@ -754,12 +852,12 @@ watch(() => route.query, (newQuery, oldQuery) => {
     selectedSearchField.value = newQuery.field
   }
 
-  // Load filters from URL if filter params changed
+  // Load filters from URL if filter params changed (external navigation like back/forward)
   if (filterChanged) {
     loadFiltersFromUrl()
   }
 
-  // Always perform search when query changes
+  // Perform search with updated parameters
   performSearch()
 }, { deep: true })
 
@@ -928,13 +1026,13 @@ watch(selectedCommunity, (newCommunityId) => {
 
           <!-- Scope Filters (Collection & Community) -->
           <div class="scope-filters-section">
-            <h4 class="section-title">{{ locale === 'ar' ? 'نطاق البحث' : 'Search Scope' }}</h4>
+            <h4 class="section-title">{{ $t('search.searchScope') }}</h4>
             <div class="scope-filters-grid">
               <!-- Community Filter -->
               <div class="form-group">
-                <label class="form-label">{{ locale === 'ar' ? 'المجتمع' : 'Community' }}</label>
+                <label class="form-label">{{ $t('search.filterBy.community') }}</label>
                 <select v-model="selectedCommunity" class="form-select">
-                  <option value="">{{ locale === 'ar' ? 'جميع المجموعات' : 'All Communities' }}</option>
+                  <option value="">{{ $t('search.allCommunities') }}</option>
                   <option v-for="comm in availableCommunities" :key="comm.id" :value="comm.id">
                     {{ comm.name }}
                   </option>
@@ -943,9 +1041,9 @@ watch(selectedCommunity, (newCommunityId) => {
 
               <!-- Collection Filter -->
               <div class="form-group">
-                <label class="form-label">{{ locale === 'ar' ? 'المجموعة' : 'Collection' }}</label>
+                <label class="form-label">{{ $t('search.filterBy.collection') }}</label>
                 <select v-model="selectedCollection" class="form-select">
-                  <option value="">{{ locale === 'ar' ? 'جميع المجموعات' : 'All Collections' }}</option>
+                  <option value="">{{ $t('search.allCollections') }}</option>
                   <option v-for="coll in availableCollections" :key="coll.id" :value="coll.id">
                     {{ coll.name }}
                   </option>
@@ -1005,21 +1103,21 @@ watch(selectedCommunity, (newCommunityId) => {
                   </div>
                 </div>
                 <div class="filter-options">
-                  <label
+                  <div
                     v-for="facetValue in getVisibleFacetValues(facet, facetName)"
                     :key="facetValue.value"
                     class="filter-option"
                     :class="{ 'is-selected': isFilterSelected(facetName, facetValue.value) }"
+                    @click="toggleFilter(facetName, facetValue.value)"
+                    role="button"
+                    tabindex="0"
+                    @keydown.enter="toggleFilter(facetName, facetValue.value)"
+                    @keydown.space.prevent="toggleFilter(facetName, facetValue.value)"
                   >
-                    <input
-                      type="radio"
-                      :name="`facet-${facetName}`"
-                      :checked="isFilterSelected(facetName, facetValue.value)"
-                      @change="toggleFilter(facetName, facetValue.value)"
-                    />
+                    <span class="filter-radio" :class="{ 'checked': isFilterSelected(facetName, facetValue.value) }"></span>
                     <span class="filter-label">{{ facetValue.label }}</span>
                     <span class="filter-count">({{ facetValue.count }})</span>
-                  </label>
+                  </div>
                 </div>
                 <!-- Expand/Collapse Button - Always show for all facets -->
                 <div class="facet-toggle-wrapper">
@@ -1032,19 +1130,19 @@ watch(selectedCommunity, (newCommunityId) => {
                       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <line x1="5" y1="12" x2="19" y2="12"/>
                       </svg>
-                      {{ locale === 'ar' ? 'عرض أقل' : 'Show Less' }}
+                      {{ $t('search.showLess') }}
                     </span>
                     <span v-else>
                       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <line x1="12" y1="5" x2="12" y2="19"/>
                         <line x1="5" y1="12" x2="19" y2="12"/>
                       </svg>
-                      {{ locale === 'ar' ? `عرض المزيد (${facet.values.length - FACET_COLLAPSED_COUNT})` : `Show More (${facet.values.length - FACET_COLLAPSED_COUNT})` }}
+                      {{ $t('search.showMore', { count: facet.values.length - FACET_COLLAPSED_COUNT }) }}
                     </span>
                   </button>
                   <!-- Show item count for facets with few items -->
                   <span v-else class="facet-items-info">
-                    {{ locale === 'ar' ? `${facet.values.length} عناصر` : `${facet.values.length} items` }}
+                    {{ $t('search.itemsCount', { count: facet.values.length }) }}
                   </span>
                 </div>
               </div>
@@ -1132,7 +1230,7 @@ watch(selectedCommunity, (newCommunityId) => {
 
             <!-- Active Filters Display -->
             <div v-if="hasActiveFilters" class="active-filters">
-              <span class="active-filters-label">{{ locale === 'ar' ? 'الفلاتر النشطة:' : 'Active Filters:' }}</span>
+              <span class="active-filters-label">{{ $t('search.activeFilters') }}</span>
               <div class="active-filters-list">
                 <template v-for="(values, facetName) in selectedFilters" :key="facetName">
                   <button
@@ -1151,7 +1249,7 @@ watch(selectedCommunity, (newCommunityId) => {
                 </template>
               </div>
               <button class="clear-all-filters-btn" @click="clearFilters">
-                {{ locale === 'ar' ? 'مسح الكل' : 'Clear All' }}
+                {{ $t('search.clearAll') }}
               </button>
             </div>
 
@@ -1192,7 +1290,7 @@ watch(selectedCommunity, (newCommunityId) => {
                   <line x1="21" y1="21" x2="16.65" y2="16.65"/>
                 </svg>
               </div>
-              <p class="initial-text">أدخل كلمات البحث للعثور على المحتوى</p>
+              <p class="initial-text">{{ $t('search.enterSearchTerms') }}</p>
             </div>
 
             <!-- Pagination -->
@@ -1754,12 +1852,37 @@ watch(selectedCommunity, (newCommunityId) => {
   margin: 0 (-$spacing-2);
   border-radius: $border-radius-sm;
   transition: all 0.15s ease;
+  user-select: none;
 
-  input {
+  .filter-radio {
     width: 18px;
     height: 18px;
-    accent-color: $primary-color;
-    cursor: pointer;
+    border: 2px solid $border-color;
+    border-radius: 50%;
+    flex-shrink: 0;
+    transition: all 0.15s ease;
+    position: relative;
+
+    &::after {
+      content: '';
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%) scale(0);
+      width: 10px;
+      height: 10px;
+      background-color: $primary-color;
+      border-radius: 50%;
+      transition: transform 0.15s ease;
+    }
+
+    &.checked {
+      border-color: $primary-color;
+
+      &::after {
+        transform: translate(-50%, -50%) scale(1);
+      }
+    }
   }
 
   .filter-label {
@@ -1781,6 +1904,15 @@ watch(selectedCommunity, (newCommunityId) => {
     .filter-label {
       color: $primary-color;
     }
+
+    .filter-radio {
+      border-color: $primary-color;
+    }
+  }
+
+  &:focus {
+    outline: 2px solid rgba($primary-color, 0.3);
+    outline-offset: 2px;
   }
 
   &.is-selected {

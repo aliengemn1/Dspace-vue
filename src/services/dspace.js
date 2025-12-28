@@ -234,9 +234,12 @@ export const items = {
    * Get item bundles
    * @param {string} id - Item UUID
    */
-  async getBundles(id) {
+  async getBundles(id, size = 50) {
     validateId(id)
-    const response = await api.get(`/core/items/${id}/bundles`)
+    // Use a larger size to get all bundles
+    const response = await api.get(`/core/items/${id}/bundles`, {
+      params: { size }
+    })
     return response.data
   },
 
@@ -366,9 +369,12 @@ export const bitstreams = {
    * Get bitstreams in a bundle
    * @param {string} bundleId - Bundle UUID
    */
-  async getByBundle(bundleId) {
+  async getByBundle(bundleId, size = 100) {
     validateId(bundleId)
-    const response = await api.get(`/core/bundles/${bundleId}/bitstreams`)
+    // Use a large size to get all bitstreams, DSpace default might be limited
+    const response = await api.get(`/core/bundles/${bundleId}/bitstreams`, {
+      params: { size }
+    })
     return response.data
   }
 }

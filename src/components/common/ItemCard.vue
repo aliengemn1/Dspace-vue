@@ -15,8 +15,24 @@ const props = defineProps({
   compact: {
     type: Boolean,
     default: false
+  },
+  showStats: {
+    type: Boolean,
+    default: true
   }
 })
+
+// Format statistics numbers
+function formatStatNumber(num) {
+  if (!num || num === 0) return '0'
+  if (num >= 1000000) {
+    return (num / 1000000).toFixed(1) + 'M'
+  }
+  if (num >= 1000) {
+    return (num / 1000).toFixed(1) + 'K'
+  }
+  return num.toString()
+}
 
 // Track image load errors to show default
 const imageError = ref(false)
@@ -95,8 +111,27 @@ const initials = computed(() => {
         <span class="item-date">{{ formatYear(item.date) }}</span>
       </div>
 
+      <!-- Statistics -->
+      <div v-if="showStats && (item.views !== undefined || item.downloads !== undefined)" class="item-stats">
+        <div v-if="item.views !== undefined" class="stat-item">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+            <circle cx="12" cy="12" r="3"/>
+          </svg>
+          <span>{{ formatStatNumber(item.views) }}</span>
+        </div>
+        <div v-if="item.downloads !== undefined" class="stat-item">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+            <polyline points="7 10 12 15 17 10"/>
+            <line x1="12" y1="15" x2="12" y2="3"/>
+          </svg>
+          <span>{{ formatStatNumber(item.downloads) }}</span>
+        </div>
+      </div>
+
       <!-- Collection -->
-      <div class="item-collection">
+      <div v-if="item.collection" class="item-collection">
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
           <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/>
         </svg>
@@ -276,6 +311,32 @@ const initials = computed(() => {
   padding: $spacing-1 $spacing-2;
   background-color: $bg-secondary;
   border-radius: $border-radius-sm;
+}
+
+// Statistics
+.item-stats {
+  display: flex;
+  align-items: center;
+  gap: $spacing-4;
+  padding: $spacing-2 0;
+  margin-bottom: $spacing-2;
+}
+
+.stat-item {
+  display: flex;
+  align-items: center;
+  gap: $spacing-1;
+  font-size: $font-size-xs;
+  color: $text-muted;
+
+  svg {
+    color: $primary-color;
+    opacity: 0.7;
+  }
+
+  span {
+    font-weight: $font-weight-medium;
+  }
 }
 
 // Collection

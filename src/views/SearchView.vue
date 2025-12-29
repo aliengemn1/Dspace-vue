@@ -360,20 +360,17 @@ async function performSearch() {
     // Use '*' (all items) if no query but filters are selected
     let queryString = query || '*'
 
-    // Apply search mode for simple search (only if there's a query)
-    if (query && !showAdvancedSearch.value && searchMode.value !== 'contains') {
+    // Apply search mode for simple search (only if there's a query and not using wildcards already)
+    if (query && !showAdvancedSearch.value && query !== '*' && !query.includes('*') && !query.includes('"')) {
       queryString = applySearchMode(query, searchMode.value)
     }
 
     if (query && selectedSearchField.value && selectedSearchField.value !== '*') {
       // Use DSpace field-specific query syntax
       queryString = `${selectedSearchField.value}:${queryString}`
-    } else if (query && selectedSearchField.value === '*') {
-      // For general search, search across multiple important fields including abstract
-      // This ensures abstract content is included in search results
-      const escapedQuery = query.replace(/['"]/g, '\\"')
-      queryString = `(dc.title:"${escapedQuery}" OR dc.contributor.author:"${escapedQuery}" OR dc.subject:"${escapedQuery}" OR dc.description.abstract:"${escapedQuery}" OR dc.description:"${escapedQuery}" OR dc.publisher:"${escapedQuery}" OR "${escapedQuery}")`
     }
+    // For general search (field === '*'), just use the query as-is
+    // DSpace will search across all indexed fields including abstract
 
     // Call DSpace search API with facets
     // Disable cache when filters are active to ensure fresh results
@@ -426,7 +423,7 @@ function handleSortChange(event) {
   performSearch()
 }
 
-async function toggleFilter(facetName, value) {
+function toggleFilter(facetName, value) {
   console.log('=== TOGGLE FILTER CALLED ===')
   console.log('Facet:', facetName, 'Value:', value)
 
@@ -455,13 +452,10 @@ async function toggleFilter(facetName, value) {
   // Clear search cache to ensure fresh results with filters
   cacheControl.clearSearchCache()
 
-  // Increment counter and set flag to prevent watcher interference
-  navigationCounter.value++
-  const currentNavigation = navigationCounter.value
+  // Set flag to prevent watcher from triggering duplicate search
   isNavigatingProgrammatically.value = true
 
-  // Update URL with filter parameters (like DSpace Angular)
-  // Use replace instead of push to avoid adding to history for each filter change
+  // Update URL with filter parameters
   const query = { ...route.query }
 
   // Remove old filter params
@@ -480,25 +474,13 @@ async function toggleFilter(facetName, value) {
 
   query.page = '1'
 
-  // Trigger search FIRST with current filters before URL update
-  // This ensures the search uses the correct selectedFilters.value
-  console.log('Calling performSearch with filters:', JSON.stringify(selectedFilters.value))
-  await performSearch()
+  // Update URL without waiting
+  router.replace({ query }).catch(() => {})
 
-  // Then update URL (watcher will be skipped due to flag)
-  try {
-    await router.replace({ query })
-  } catch (err) {
-    // Ignore navigation duplicated errors
-    if (err.name !== 'NavigationDuplicated') {
-      console.error('Router replace error:', err)
-    }
-  }
-
-  // Reset flag only if this is still the current navigation
-  if (currentNavigation === navigationCounter.value) {
+  // Perform search immediately
+  performSearch().finally(() => {
     isNavigatingProgrammatically.value = false
-  }
+  })
 }
 
 // Update URL with current filters (DSpace Angular style)
@@ -527,18 +509,13 @@ function updateUrlWithFilters() {
   router.push({ query })
 }
 
-async function clearFilters() {
+function clearFilters() {
   selectedFilters.value = {}
   currentPage.value = 1
   cacheControl.clearSearchCache()
 
-  // Increment counter and set flag to prevent watcher interference
-  navigationCounter.value++
-  const currentNavigation = navigationCounter.value
+  // Set flag to prevent watcher from triggering duplicate search
   isNavigatingProgrammatically.value = true
-
-  // Trigger search FIRST with cleared filters
-  await performSearch()
 
   // Remove filter params from URL
   const query = { ...route.query }
@@ -549,18 +526,13 @@ async function clearFilters() {
   })
   query.page = '1'
 
-  try {
-    await router.replace({ query })
-  } catch (err) {
-    if (err.name !== 'NavigationDuplicated') {
-      console.error('Router replace error:', err)
-    }
-  }
+  // Update URL without waiting
+  router.replace({ query }).catch(() => {})
 
-  // Reset flag only if this is still the current navigation
-  if (currentNavigation === navigationCounter.value) {
+  // Perform search immediately
+  performSearch().finally(() => {
     isNavigatingProgrammatically.value = false
-  }
+  })
 }
 
 // Load filters from URL query params (on page load or URL change)
@@ -818,6 +790,13 @@ onMounted(async () => {
 
   // Always perform search (with * if no query provided)
   performSearch()
+})
+
+// Re-run search when search mode changes
+watch(searchMode, () => {
+  if (searchQuery.value && searchQuery.value !== '*') {
+    performSearch()
+  }
 })
 
 watch(() => route.query, (newQuery, oldQuery) => {

@@ -1,5 +1,5 @@
 <script setup>
-import { ref, computed, onMounted, onUnmounted } from 'vue'
+import { ref, computed, watch, onMounted, onUnmounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { sanitizeSearchQuery } from '@/utils/security'
 
@@ -42,6 +42,13 @@ const searchInput = ref(null)
 const query = ref(props.modelValue)
 const selectedCategory = ref('general')
 const isCategoryOpen = ref(false)
+
+// Sync local query with parent modelValue
+watch(() => props.modelValue, (newValue) => {
+  if (newValue !== query.value) {
+    query.value = newValue
+  }
+})
 
 // Voice search
 const isListening = ref(false)

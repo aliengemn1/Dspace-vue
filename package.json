@@ -8,6 +8,7 @@
     "dev": "vite",
     "build": "vite build",
     "build:idr": "vite build --outDir ./idr --base /",
+    "build:kfnl": "vite build --mode kfnl --outDir ./dist-kfnl --base /",
     "preview": "vite preview",
     "lint": "eslint . --ext .vue,.js,.jsx,.cjs,.mjs --fix --ignore-path .gitignore",
     "audit": "npm audit --production",

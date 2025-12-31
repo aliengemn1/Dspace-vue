@@ -14,8 +14,8 @@ export default {
    * - Production server: 'http://192.168.2.129:8080/server/api'
    * - Remote server: 'https://dspace.example.com/server/api'
    */
-  //apiUrl: 'http://172.10.14.58:8080/server/api',
-  apiUrl: 'http://localhost:8080/server/api',
+  // API URL from environment variable, fallback to localhost for development
+  apiUrl: import.meta.env.VITE_API_URL || 'http://localhost:8080/server/api',
   /**
    * Auto-login credentials (optional)
    * Set to null to disable auto-login

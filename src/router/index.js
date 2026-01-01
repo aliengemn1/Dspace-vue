@@ -1,4 +1,5 @@
 import { createRouter, createWebHistory } from 'vue-router'
+import { useAuthStore } from '@/stores/auth'
 
 const routes = [
   {
@@ -119,6 +120,25 @@ const routes = [
     }
   },
   {
+    path: '/login',
+    name: 'login',
+    component: () => import('@/views/LoginView.vue'),
+    meta: {
+      title: 'تسجيل الدخول',
+      titleEn: 'Login'
+    }
+  },
+  {
+    path: '/profile',
+    name: 'profile',
+    component: () => import('@/views/ProfileView.vue'),
+    meta: {
+      title: 'الملف الشخصي',
+      titleEn: 'Profile',
+      requiresAuth: true
+    }
+  },
+  {
     path: '/:pathMatch(.*)*',
     name: 'not-found',
     component: () => import('@/views/NotFoundView.vue'),
@@ -143,11 +163,36 @@ const router = createRouter({
   }
 })
 
-// Update page title on route change
-router.beforeEach((to, from, next) => {
+// Navigation guard for authentication and page title
+router.beforeEach(async (to, from, next) => {
+  const authStore = useAuthStore()
+
+  // Initialize auth store if not already done
+  if (!authStore.isInitialized) {
+    await authStore.initialize()
+  }
+
+  // Check if route requires authentication
+  if (to.meta.requiresAuth && !authStore.isAuthenticated) {
+    // Redirect to login with return URL
+    next({
+      name: 'login',
+      query: { redirect: to.fullPath }
+    })
+    return
+  }
+
+  // Redirect authenticated users away from login page
+  if (to.name === 'login' && authStore.isAuthenticated) {
+    next({ name: 'profile' })
+    return
+  }
+
+  // Update page title
   const lang = document.documentElement.lang || 'ar'
   const title = lang === 'ar' ? to.meta.title : to.meta.titleEn
   document.title = `${title} | المستودع الرقمي - مكتبة الملك فهد الوطنية`
+
   next()
 })
 

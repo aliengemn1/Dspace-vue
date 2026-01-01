@@ -16,37 +16,11 @@ const emit = defineEmits(['navigate'])
 const isReady = ref(false)
 const activeHall = ref(null)
 
-const hallIcons = {
-  book: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-    <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/>
-    <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/>
-  </svg>`,
-  graduation: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-    <path d="M22 10v6M2 10l10-5 10 5-10 5z"/>
-    <path d="M6 12v5c3 3 9 3 12 0v-5"/>
-  </svg>`,
-  newspaper: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-    <path d="M4 22h16a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2H8a2 2 0 0 0-2 2v16a2 2 0 0 1-2 2zm0 0a2 2 0 0 1-2-2v-9c0-1.1.9-2 2-2h2"/>
-    <path d="M18 14h-8M15 18h-5M10 6h8v4h-8z"/>
-  </svg>`,
-  scroll: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-    <path d="M8 21h12a2 2 0 0 0 2-2v-2H10v2a2 2 0 1 1-4 0V5a2 2 0 1 0-4 0v3h4"/>
-    <path d="M19 17V5a2 2 0 0 0-2-2H4"/>
-  </svg>`,
-  video: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-    <rect x="2" y="2" width="20" height="20" rx="2.18" ry="2.18"/>
-    <line x1="7" y1="2" x2="7" y2="22"/>
-    <line x1="17" y1="2" x2="17" y2="22"/>
-    <line x1="2" y1="12" x2="22" y2="12"/>
-    <line x1="2" y1="7" x2="7" y2="7"/>
-    <line x1="2" y1="17" x2="7" y2="17"/>
-    <line x1="17" y1="17" x2="22" y2="17"/>
-    <line x1="17" y1="7" x2="22" y2="7"/>
-  </svg>`
-}
+// Valid icon names whitelist for security
+const validHallIcons = ['book', 'graduation', 'newspaper', 'scroll', 'video']
 
-function getHallIcon(iconName) {
-  return hallIcons[iconName] || hallIcons.book
+function getValidIconName(iconName) {
+  return validHallIcons.includes(iconName) ? iconName : 'book'
 }
 
 function enterHall(hallId) {
@@ -112,7 +86,28 @@ onMounted(() => {
             @mouseleave="activeHall = null"
             @click="enterHall(hall.id)"
           >
-            <div class="hall-icon" v-html="getHallIcon(hall.icon)"></div>
+            <div class="hall-icon">
+              <!-- Book icon (default) -->
+              <svg v-if="getValidIconName(hall.icon) === 'book'" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/>
+              </svg>
+              <!-- Graduation icon -->
+              <svg v-else-if="getValidIconName(hall.icon) === 'graduation'" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                <path d="M22 10v6M2 10l10-5 10 5-10 5z"/><path d="M6 12v5c3 3 9 3 12 0v-5"/>
+              </svg>
+              <!-- Newspaper icon -->
+              <svg v-else-if="getValidIconName(hall.icon) === 'newspaper'" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                <path d="M4 22h16a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2H8a2 2 0 0 0-2 2v16a2 2 0 0 1-2 2zm0 0a2 2 0 0 1-2-2v-9c0-1.1.9-2 2-2h2"/><path d="M18 14h-8M15 18h-5M10 6h8v4h-8z"/>
+              </svg>
+              <!-- Scroll icon -->
+              <svg v-else-if="getValidIconName(hall.icon) === 'scroll'" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                <path d="M8 21h12a2 2 0 0 0 2-2v-2H10v2a2 2 0 1 1-4 0V5a2 2 0 1 0-4 0v3h4"/><path d="M19 17V5a2 2 0 0 0-2-2H4"/>
+              </svg>
+              <!-- Video icon -->
+              <svg v-else-if="getValidIconName(hall.icon) === 'video'" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                <rect x="2" y="2" width="20" height="20" rx="2.18" ry="2.18"/><line x1="7" y1="2" x2="7" y2="22"/><line x1="17" y1="2" x2="17" y2="22"/><line x1="2" y1="12" x2="22" y2="12"/><line x1="2" y1="7" x2="7" y2="7"/><line x1="2" y1="17" x2="7" y2="17"/><line x1="17" y1="17" x2="22" y2="17"/><line x1="17" y1="7" x2="22" y2="7"/>
+              </svg>
+            </div>
             <div class="hall-info">
               <h3 class="hall-name">{{ hall.name }}</h3>
               <p class="hall-name-en">{{ hall.nameEn }}</p>
